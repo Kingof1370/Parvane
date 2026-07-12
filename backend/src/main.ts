@@ -34,7 +34,7 @@ async function bootstrap() {
 
   // Swagger docs
   const config = new DocumentBuilder()
-    .setTitle('سالن زیبایی پروانه')
+    .setTitle('سالن زیبایی پروانه اکبرپور')
     .setDescription('API سیستم مدیریت سالن زیبایی پروانه اکبرپور')
     .setVersion('1.0')
     .addBearerAuth()
