@@ -1,49 +1,41 @@
-# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+# Node
+node_modules/
+dist/
+.env
+*.env.local
 
-# compiled output
-dist
-tmp
-out-tsc
-*.tsbuildinfo
-.expo
-.expo-shared
+# Android
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+android/keystore/*.keystore
+*.keystore
+*.jks
+*.apk
+*.aab
 
-# dependencies
-node_modules
+# Backend
+backend/dist/
+backend/node_modules/
+backend/uploads/
 
-# IDEs and editors
-/.idea
-.project
-.classpath
-.c9/
-*.launch
-.settings/
-*.sublime-workspace
+# Admin
+admin/node_modules/
+admin/dist/
 
-# IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+# Docker
+.dockerignore
 
-# misc
-/.sass-cache
-/connect.lock
-/coverage
-/libpeerconnection.log
-npm-debug.log
-yarn-error.log
-testem.log
-/typings
+# IDE
+.idea/
+.vscode/
+*.iml
 
-# System Files
+# OS
 .DS_Store
 Thumbs.db
 
-.cursor/rules/nx-rules.mdc
-.github/instructions/nx.instructions.md
-
-# Replit
-.cache/
-.local/
+# Logs
+*.log
+npm-debug.log*

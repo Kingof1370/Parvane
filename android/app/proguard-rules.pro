@@ -1,0 +1,4 @@
+-keep class ir.parvanesalon.app.data.remote.models.** { *; }
+-keepattributes *Annotation*
+-dontwarn okhttp3.**
+-dontwarn retrofit2.**
