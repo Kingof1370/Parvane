@@ -26,7 +26,7 @@ class BookingViewModel @Inject constructor(private val api: ApiService) : ViewMo
     private val _uiState = MutableStateFlow(BookingUiState())
     val uiState: StateFlow<BookingUiState> = _uiState
 
-    fun init(serviceId: String, staffId: String) {
+    fun init(serviceId: String, @Suppress("UNUSED_PARAMETER") staffId: String) {
         viewModelScope.launch {
             try {
                 val service = api.getService(serviceId).body()

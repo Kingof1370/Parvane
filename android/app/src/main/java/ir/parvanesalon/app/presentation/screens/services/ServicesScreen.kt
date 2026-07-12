@@ -114,7 +114,7 @@ fun StaffPickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("انتخاب متخصص") },
+        title = { Text("انتخاب متخصص برای ${service.name}") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 staff.forEach { s ->

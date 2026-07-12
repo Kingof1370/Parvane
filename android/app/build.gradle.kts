@@ -24,19 +24,28 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file(System.getenv("KEYSTORE_PATH") ?: "keystore/release.keystore")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "parvane2024"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "parvane"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "parvane2024"
+            // rootProject.file() resolves relative to android/ (project root),
+            // matching where the CI workflow creates the keystore.
+            val ksPath = System.getenv("KEYSTORE_PATH") ?: "keystore/release.keystore"
+            val ksFile = rootProject.file(ksPath)
+            if (ksFile.exists()) {
+                storeFile     = ksFile
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "parvane2024"
+                keyAlias      = System.getenv("KEY_ALIAS")          ?: "parvane"
+                keyPassword   = System.getenv("KEY_PASSWORD")       ?: "parvane2024"
+            }
         }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled    = true
+            isShrinkResources  = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("release")
+            // Use release signing only when the keystore actually exists.
+            val ksPath = System.getenv("KEYSTORE_PATH") ?: "keystore/release.keystore"
+            signingConfig = if (rootProject.file(ksPath).exists()) signingConfigs.getByName("release")
+                            else signingConfigs.getByName("debug")
         }
         debug {
             applicationIdSuffix = ".debug"
