@@ -19,8 +19,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        buildConfigField("String", "BASE_URL", "\"https://api.parvane-salon.ir/api/v1/\"")
-    }
+        buildConfigField("String", "BASE_URL", ""https://parvane-backend.onrender.com/api/v1/"")
+      }
 
     signingConfigs {
         create("release") {

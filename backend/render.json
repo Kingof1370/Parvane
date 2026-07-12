@@ -1,0 +1,9 @@
+{
+    "name": "parvane-backend",
+    "type": "web_service",
+    "runtime": "node",
+    "region": "frankfurt",
+    "plan": "free",
+    "buildCommand": "npm install",
+    "startCommand": "node dist/main.js"
+}
