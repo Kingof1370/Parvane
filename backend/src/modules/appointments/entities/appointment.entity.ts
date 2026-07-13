@@ -15,6 +15,13 @@ export enum AppointmentStatus {
   NO_SHOW = 'no_show',
 }
 
+export enum PrePaymentStatus {
+  NOT_REQUIRED = 'not_required',
+  PENDING = 'pending',
+  PAID = 'paid',
+  REFUNDED = 'refunded',
+}
+
 @Entity('appointments')
 export class Appointment {
   @PrimaryGeneratedColumn('uuid')
@@ -59,11 +66,52 @@ export class Appointment {
   @Column({ default: false })
   reminderSent: boolean;
 
+  @Column({ default: false })
+  aftercareReminderSent: boolean;
+
   @Column({ nullable: true })
   reviewRating: number;
 
   @Column({ nullable: true, type: 'text' })
   reviewText: string;
+
+  @Column({ nullable: true })
+  reviewedAt: Date;
+
+  // پیش‌پرداخت
+  @Column({ type: 'enum', enum: PrePaymentStatus, default: PrePaymentStatus.NOT_REQUIRED })
+  prePaymentStatus: PrePaymentStatus;
+
+  @Column({ type: 'decimal', precision: 10, scale: 0, nullable: true })
+  prePaymentAmount: number;
+
+  @Column({ nullable: true })
+  prePaymentTransactionId: string;
+
+  @Column({ nullable: true })
+  prePaymentDate: Date;
+
+  // اتصال به تقویم گوشی
+  @Column({ nullable: true })
+  calendarEventId: string;
+
+  @Column({ default: false })
+  addedToCalendar: boolean;
+
+  // بازه‌ی زمانی ترجیحی
+  @Column({ nullable: true })
+  timeRangePreference: string;
+
+  // مدل/استایل انتخابی از گالری
+  @Column({ nullable: true })
+  selectedStyleGalleryId: string;
+
+  @Column({ nullable: true })
+  selectedStyleImageUrl: string;
+
+  // امتیاز وفاداری کسب‌شده
+  @Column({ default: 0 })
+  loyaltyPointsEarned: number;
 
   @CreateDateColumn()
   createdAt: Date;

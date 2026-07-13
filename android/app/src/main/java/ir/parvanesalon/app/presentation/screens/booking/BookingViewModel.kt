@@ -8,57 +8,146 @@ import ir.parvanesalon.app.data.remote.models.CreateAppointmentRequest
 import ir.parvanesalon.app.data.remote.models.ServiceDto
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
+data class DateInfo(val isoDate: String, val dayName: String, val dayNum: String, val monthName: String)
+
 data class BookingUiState(
-    val isLoadingSlots: Boolean = false,
-    val isBooking: Boolean = false,
-    val bookingSuccess: Boolean = false,
+    val isLoading: Boolean = false,
+    val services: List<ServiceDto> = emptyList(),
+    val availableDates: List<DateInfo> = emptyList(),
     val slots: List<String> = emptyList(),
-    val service: ServiceDto? = null,
-    val error: String? = null
+    val slotsLoading: Boolean = false,
+    val selectedServiceId: String? = null,
+    val selectedDate: String? = null,
+    val selectedTime: String? = null,
+    val timeRangePreference: String = "any",
+    val notes: String = "",
+    val requirePrePayment: Boolean = false,
+    val selectedStyleGalleryId: String? = null,
+    val selectedStyleImageUrl: String? = null,
+    val error: String? = null,
+    val success: Boolean = false,
 )
 
 @HiltViewModel
 class BookingViewModel @Inject constructor(private val api: ApiService) : ViewModel() {
-    private val _uiState = MutableStateFlow(BookingUiState())
-    val uiState: StateFlow<BookingUiState> = _uiState
 
-    fun init(serviceId: String, @Suppress("UNUSED_PARAMETER") staffId: String) {
+    private val _uiState = MutableStateFlow(BookingUiState())
+    val uiState: StateFlow<BookingUiState> = _uiState.asStateFlow()
+
+    private var currentStaffId: String = ""
+
+    fun init(staffId: String, preselectedServiceId: String?) {
+        currentStaffId = staffId
+        buildDates()
         viewModelScope.launch {
             try {
-                val service = api.getService(serviceId).body()
-                _uiState.update { it.copy(service = service) }
-            } catch (ignored: Exception) {}
+                val res = api.getServices()
+                if (res.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(
+                        services = res.body() ?: emptyList(),
+                        selectedServiceId = preselectedServiceId
+                    )
+                }
+            } catch (_: Exception) {}
         }
     }
 
-    fun loadSlots(staffId: String, serviceId: String, date: String) {
+    private fun buildDates() {
+        val today = LocalDate.now()
+        val persianDays = listOf("یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه")
+        val persianMonths = listOf("فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند")
+        val dates = (0 until 14).map { offset ->
+            val date = today.plusDays(offset.toLong())
+            val dayIdx = (date.dayOfWeek.value % 7)
+            DateInfo(
+                isoDate = date.format(DateTimeFormatter.ISO_LOCAL_DATE),
+                dayName = persianDays[dayIdx],
+                dayNum = toPersianDigits(date.dayOfMonth.toString()),
+                monthName = persianMonths[date.monthValue - 1]
+            )
+        }
+        _uiState.value = _uiState.value.copy(availableDates = dates)
+    }
+
+    private fun toPersianDigits(s: String): String {
+        val map = mapOf('0' to '۰','1' to '۱','2' to '۲','3' to '۳','4' to '۴','5' to '۵','6' to '۶','7' to '۷','8' to '۸','9' to '۹')
+        return s.map { map[it] ?: it }.joinToString("")
+    }
+
+    fun selectService(serviceId: String) {
+        _uiState.value = _uiState.value.copy(selectedServiceId = serviceId, slots = emptyList(), selectedTime = null)
+        val date = _uiState.value.selectedDate
+        if (date != null) loadSlots(serviceId, date)
+    }
+
+    fun selectDate(date: String) {
+        _uiState.value = _uiState.value.copy(selectedDate = date, slots = emptyList(), selectedTime = null)
+        val serviceId = _uiState.value.selectedServiceId
+        if (serviceId != null) loadSlots(serviceId, date)
+    }
+
+    private fun loadSlots(serviceId: String, date: String) {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoadingSlots = true) }
+            _uiState.value = _uiState.value.copy(slotsLoading = true)
             try {
-                val res = api.getAvailableSlots(staffId, serviceId, date).body()
-                _uiState.update { it.copy(isLoadingSlots = false, slots = res?.slots ?: emptyList()) }
-            } catch (e: Exception) {
-                _uiState.update { it.copy(isLoadingSlots = false, slots = emptyList()) }
+                val res = api.getAvailableSlots(staffId = currentStaffId, serviceId = serviceId, date = date)
+                if (res.isSuccessful) {
+                    _uiState.value = _uiState.value.copy(
+                        slotsLoading = false,
+                        slots = res.body()?.slots ?: emptyList()
+                    )
+                } else {
+                    _uiState.value = _uiState.value.copy(slotsLoading = false)
+                }
+            } catch (_: Exception) {
+                _uiState.value = _uiState.value.copy(slotsLoading = false)
             }
         }
     }
 
-    fun book(serviceId: String, staffId: String, date: String, startTime: String, notes: String?) {
+    fun selectTime(time: String) { _uiState.value = _uiState.value.copy(selectedTime = time) }
+    fun setTimeRange(range: String) { _uiState.value = _uiState.value.copy(timeRangePreference = range) }
+    fun setNotes(notes: String) { _uiState.value = _uiState.value.copy(notes = notes) }
+    fun togglePrePayment(v: Boolean) { _uiState.value = _uiState.value.copy(requirePrePayment = v) }
+    fun setSelectedStyle(galleryId: String?, imageUrl: String?) {
+        _uiState.value = _uiState.value.copy(selectedStyleGalleryId = galleryId, selectedStyleImageUrl = imageUrl)
+    }
+
+    fun submit() {
+        val state = _uiState.value
+        if (state.selectedServiceId == null || state.selectedDate == null || state.selectedTime == null) {
+            _uiState.value = state.copy(error = "لطفاً سرویس، تاریخ و ساعت را انتخاب کنید")
+            return
+        }
         viewModelScope.launch {
-            _uiState.update { it.copy(isBooking = true, error = null) }
+            _uiState.value = state.copy(isLoading = true, error = null)
             try {
-                val res = api.createAppointment(CreateAppointmentRequest(serviceId, staffId, date, startTime, notes))
+                val req = CreateAppointmentRequest(
+                    serviceId = state.selectedServiceId,
+                    staffId = currentStaffId,
+                    date = state.selectedDate,
+                    startTime = state.selectedTime,
+                    notes = state.notes.ifBlank { null },
+                    timeRangePreference = if (state.timeRangePreference == "any") null else state.timeRangePreference,
+                    selectedStyleGalleryId = state.selectedStyleGalleryId,
+                    selectedStyleImageUrl = state.selectedStyleImageUrl,
+                    requirePrePayment = state.requirePrePayment,
+                )
+                val res = api.createAppointment(req)
                 if (res.isSuccessful) {
-                    _uiState.update { it.copy(isBooking = false, bookingSuccess = true) }
+                    _uiState.value = _uiState.value.copy(isLoading = false, success = true)
                 } else {
-                    _uiState.update { it.copy(isBooking = false, error = "خطا در ثبت رزرو") }
+                    val errBody = res.errorBody()?.string() ?: "خطایی رخ داد"
+                    _uiState.value = _uiState.value.copy(isLoading = false, error = errBody)
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isBooking = false, error = "خطا در اتصال به سرور") }
+                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message ?: "خطای اتصال")
             }
         }
     }

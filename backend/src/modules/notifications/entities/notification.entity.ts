@@ -5,6 +5,13 @@ export enum NotificationType {
   APPOINTMENT_CONFIRMED = 'appointment_confirmed',
   APPOINTMENT_REMINDER = 'appointment_reminder',
   APPOINTMENT_CANCELLED = 'appointment_cancelled',
+  AFTERCARE_REMINDER = 'aftercare_reminder',
+  LOYALTY_REWARD = 'loyalty_reward',
+  LOYALTY_EXPIRY = 'loyalty_expiry',
+  PRE_PAYMENT_REQUIRED = 'pre_payment_required',
+  PRE_PAYMENT_CONFIRMED = 'pre_payment_confirmed',
+  CHAT_NEW_MESSAGE = 'chat_new_message',
+  REVIEW_REQUEST = 'review_request',
   PROMOTION = 'promotion',
   GENERAL = 'general',
 }
@@ -14,7 +21,7 @@ export class Notification {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user: User;
 
   @Column()
@@ -31,6 +38,12 @@ export class Notification {
 
   @Column({ nullable: true, type: 'jsonb' })
   data: any;
+
+  @Column({ nullable: true })
+  scheduledAt: Date;
+
+  @Column({ default: false })
+  isSent: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

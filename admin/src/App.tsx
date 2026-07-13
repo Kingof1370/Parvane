@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import AppointmentsPage from './pages/AppointmentsPage'
@@ -7,8 +6,10 @@ import ServicesPage from './pages/ServicesPage'
 import StaffPage from './pages/StaffPage'
 import ClientsPage from './pages/ClientsPage'
 import SettingsPage from './pages/SettingsPage'
+import GalleryPage from './pages/GalleryPage'
+import LoyaltyPage from './pages/LoyaltyPage'
+import ChatPage from './pages/ChatPage'
 import Layout from './components/Layout'
-import { api } from './api/client'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token')
@@ -26,6 +27,9 @@ export default function App() {
         <Route path="services" element={<ServicesPage />} />
         <Route path="staff" element={<StaffPage />} />
         <Route path="clients" element={<ClientsPage />} />
+        <Route path="gallery" element={<GalleryPage />} />
+        <Route path="loyalty" element={<LoyaltyPage />} />
+        <Route path="chat" element={<ChatPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>

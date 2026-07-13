@@ -51,6 +51,20 @@ export class User {
   @Column({ nullable: true })
   refreshToken: string;
 
+  // سیستم امتیازدهی وفاداری
+  @Column({ default: 0 })
+  loyaltyPoints: number;
+
+  @Column({ default: 0 })
+  totalLoyaltyEarned: number;
+
+  @Column({ default: 0 })
+  totalLoyaltyRedeemed: number;
+
+  // برای متخصصان: بخش مرتبط
+  @Column({ nullable: true })
+  staffSection: string;
+
   @OneToMany(() => Appointment, (appt) => appt.client)
   appointments: Appointment[];
 

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { ServicesModule } from './modules/services/services.module';
@@ -12,6 +13,9 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { GalleryModule } from './modules/gallery/gallery.module';
+import { LoyaltyModule } from './modules/loyalty/loyalty.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -19,6 +23,7 @@ import { HealthController } from './health.controller';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
@@ -29,14 +34,8 @@ import { HealthController } from './health.controller';
         password: config.get('DATABASE_PASSWORD', 'password'),
         database: config.get('DATABASE_NAME', 'parvane_salon'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        // No migrations exist yet in this project, so schema sync must stay on even in
-        // production until a proper migration workflow is introduced. Controlled by an
-        // explicit env var so it can be disabled later without another code change.
         synchronize: config.get('DATABASE_SYNCHRONIZE', 'true') === 'true',
         logging: config.get('NODE_ENV') === 'development',
-        // Render's managed Postgres requires SSL for connections; local/dev
-        // Postgres does not support it, so default to on and let it be
-        // disabled explicitly via DATABASE_SSL=false for local development.
         ssl:
           config.get('DATABASE_SSL', 'true') === 'true'
             ? { rejectUnauthorized: false }
@@ -54,6 +53,9 @@ import { HealthController } from './health.controller';
     SettingsModule,
     UploadModule,
     DashboardModule,
+    GalleryModule,
+    LoyaltyModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

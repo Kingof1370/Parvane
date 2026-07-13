@@ -1,5 +1,16 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToMany, JoinTable, OneToMany } from 'typeorm';
+import {
+  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
+  ManyToMany, JoinTable, OneToMany, OneToOne, JoinColumn,
+} from 'typeorm';
 import { SalonService } from '../../services/entities/service.entity';
+import { StaffPortfolio } from './staff-portfolio.entity';
+
+export enum StaffPermission {
+  MANAGE_OWN_PORTFOLIO = 'manage_own_portfolio',
+  RESPOND_TO_CHAT = 'respond_to_chat',
+  VIEW_OWN_APPOINTMENTS = 'view_own_appointments',
+  MANAGE_OWN_AVAILABILITY = 'manage_own_availability',
+}
 
 @Entity('staff')
 export class Staff {
@@ -28,6 +39,9 @@ export class Staff {
   @JoinTable()
   specialties: SalonService[];
 
+  @OneToMany(() => StaffPortfolio, (p) => p.staff, { cascade: true })
+  portfolio: StaffPortfolio[];
+
   @Column({ type: 'jsonb', nullable: true })
   workingHours: {
     [day: string]: { start: string; end: string; isOff: boolean };
@@ -41,6 +55,25 @@ export class Staff {
 
   @Column({ default: 0 })
   sortOrder: number;
+
+  @Column({ default: 0 })
+  experienceYears: number;
+
+  @Column({ nullable: true })
+  instagramUrl: string;
+
+  @Column({ nullable: true })
+  certificationsText: string;
+
+  @Column({ type: 'simple-array', nullable: true })
+  permissions: StaffPermission[];
+
+  // مرتبط با حساب کاربری برای ورود متخصص
+  @Column({ nullable: true, unique: true })
+  userId: string;
+
+  @Column({ nullable: true })
+  section: string;
 
   @CreateDateColumn()
   createdAt: Date;

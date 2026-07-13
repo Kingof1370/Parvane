@@ -50,9 +50,18 @@ export const servicesApi = {
 
 export const staffApi = {
   getAll: () => api.get('/staff'),
+  getOne: (id: string) => api.get(`/staff/${id}`),
   create: (data: any) => api.post('/staff', data),
   update: (id: string, data: any) => api.put(`/staff/${id}`, data),
   remove: (id: string) => api.delete(`/staff/${id}`),
+  getPortfolioAdmin: (staffId: string) => api.get(`/staff/${staffId}/portfolio/admin`),
+  addPortfolioItem: (staffId: string, data: any) => api.post(`/staff/${staffId}/portfolio`, data),
+  updatePortfolioItem: (itemId: string, data: any) => api.put(`/staff/portfolio/${itemId}`, data),
+  removePortfolioItem: (itemId: string) => api.delete(`/staff/portfolio/${itemId}`),
+  updatePermissions: (staffId: string, permissions: string[]) =>
+    api.patch(`/staff/${staffId}/permissions`, { permissions }),
+  linkUserAccount: (staffId: string, userId: string) =>
+    api.patch(`/staff/${staffId}/link-user`, { userId }),
 }
 
 export const clientsApi = {
@@ -63,4 +72,34 @@ export const clientsApi = {
 export const settingsApi = {
   getAll: () => api.get('/settings'),
   update: (data: any) => api.put('/settings', data),
+}
+
+export const galleryApi = {
+  getAll: () => api.get('/gallery/admin'),
+  getPublic: (params?: any) => api.get('/gallery', { params }),
+  create: (data: any) => api.post('/gallery', data),
+  update: (id: string, data: any) => api.put(`/gallery/${id}`, data),
+  remove: (id: string) => api.delete(`/gallery/${id}`),
+}
+
+export const loyaltyApi = {
+  getAllUsers: () => api.get('/loyalty/all-users'),
+  getUserTransactions: (userId: string) => api.get(`/loyalty/user/${userId}`),
+  adminAdjust: (userId: string, points: number, description: string) =>
+    api.post(`/loyalty/admin/adjust/${userId}`, { points, description }),
+}
+
+export const chatApi = {
+  getAllRooms: () => api.get('/chat/rooms/all'),
+  getRoomMessages: (roomId: string) => api.get(`/chat/rooms/${roomId}/messages`),
+  sendMessage: (roomId: string, content: string, imageUrl?: string) =>
+    api.post(`/chat/rooms/${roomId}/messages`, { content, imageUrl }),
+  assignStaff: (roomId: string, staffId: string) =>
+    api.patch(`/chat/rooms/${roomId}/assign`, { staffId }),
+  closeRoom: (roomId: string) => api.patch(`/chat/rooms/${roomId}/close`),
+}
+
+export const notificationsAdminApi = {
+  sendToUser: (userId: string, title: string, body: string, type: string) =>
+    api.post('/notifications/admin/send', { userId, title, body, type }),
 }

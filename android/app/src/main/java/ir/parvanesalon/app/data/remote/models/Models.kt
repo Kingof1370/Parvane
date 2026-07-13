@@ -20,7 +20,10 @@ data class UserDto(
     val email: String? = null,
     val role: String = "client",
     val avatar: String? = null,
-    val isActive: Boolean = true
+    val isActive: Boolean = true,
+    val loyaltyPoints: Int = 0,
+    val totalLoyaltyEarned: Int = 0,
+    val totalLoyaltyRedeemed: Int = 0,
 )
 
 @Serializable
@@ -66,7 +69,41 @@ data class StaffDto(
     val bio: String? = null,
     val rating: Double = 0.0,
     val totalReviews: Int = 0,
-    val specialties: List<ServiceDto> = emptyList()
+    val specialties: List<ServiceDto> = emptyList(),
+    val portfolio: List<PortfolioItemDto> = emptyList(),
+    val experienceYears: Int = 0,
+    val instagramUrl: String? = null,
+    val certificationsText: String? = null,
+    val section: String? = null,
+)
+
+@Serializable
+data class PortfolioItemDto(
+    val id: String,
+    val title: String,
+    val description: String? = null,
+    val imageUrl: String,
+    val beforeImageUrl: String? = null,
+    val type: String = "work_sample",
+    val serviceCategory: String? = null,
+    val likesCount: Int = 0,
+    val createdAt: String? = null,
+)
+
+@Serializable
+data class StyleGalleryItemDto(
+    val id: String,
+    val title: String,
+    val description: String? = null,
+    val imageUrl: String,
+    val thumbnailUrl: String? = null,
+    val category: CategoryDto? = null,
+    val tags: List<String> = emptyList(),
+    val staffName: String? = null,
+    val duration: String? = null,
+    val viewsCount: Int = 0,
+    val likesCount: Int = 0,
+    val isActive: Boolean = true,
 )
 
 @Serializable
@@ -80,7 +117,13 @@ data class AppointmentDto(
     val status: String,
     val notes: String? = null,
     val paidAmount: Double? = null,
-    val reviewRating: Int? = null
+    val reviewRating: Int? = null,
+    val reviewText: String? = null,
+    val prePaymentStatus: String = "not_required",
+    val prePaymentAmount: Double? = null,
+    val addedToCalendar: Boolean = false,
+    val loyaltyPointsEarned: Int = 0,
+    val selectedStyleImageUrl: String? = null,
 )
 
 @Serializable
@@ -89,7 +132,12 @@ data class CreateAppointmentRequest(
     val staffId: String,
     val date: String,
     val startTime: String,
-    val notes: String? = null
+    val notes: String? = null,
+    val timeRangePreference: String? = null,
+    val selectedStyleGalleryId: String? = null,
+    val selectedStyleImageUrl: String? = null,
+    val requirePrePayment: Boolean = false,
+    val prePaymentAmount: Double? = null,
 )
 
 @Serializable
@@ -117,8 +165,12 @@ data class NotificationDto(
     val body: String,
     val type: String,
     val isRead: Boolean,
+    val data: kotlinx.serialization.json.JsonElement? = null,
     val createdAt: String
 )
+
+@Serializable
+data class UnreadCountResponse(val count: Int)
 
 @Serializable
 data class DashboardSummary(
@@ -126,4 +178,74 @@ data class DashboardSummary(
     val pendingAppointments: Int,
     val totalClients: Int,
     val totalRevenue: Double
+)
+
+@Serializable
+data class LoyaltyPointsResponse(
+    val balance: Int,
+    val totalEarned: Int,
+    val totalRedeemed: Int,
+    val transactions: List<LoyaltyTransactionDto>
+)
+
+@Serializable
+data class LoyaltyTransactionDto(
+    val id: String,
+    val type: String,
+    val points: Int,
+    val description: String? = null,
+    val createdAt: String
+)
+
+@Serializable
+data class ChatRoomDto(
+    val id: String,
+    val client: UserDto? = null,
+    val staff: StaffDto? = null,
+    val status: String,
+    val subject: String? = null,
+    val serviceCategory: String? = null,
+    val unreadClientCount: Int = 0,
+    val createdAt: String? = null,
+    val updatedAt: String? = null,
+)
+
+@Serializable
+data class ChatMessageDto(
+    val id: String,
+    val senderType: String,
+    val senderId: String? = null,
+    val content: String,
+    val imageUrl: String? = null,
+    val isRead: Boolean = false,
+    val createdAt: String
+)
+
+@Serializable
+data class ChatRoomMessagesResponse(
+    val room: ChatRoomDto,
+    val messages: List<ChatMessageDto>
+)
+
+@Serializable
+data class CreateChatRoomRequest(
+    val subject: String? = null,
+    val serviceCategory: String? = null,
+    val staffId: String? = null,
+)
+
+@Serializable
+data class SendMessageRequest(
+    val content: String,
+    val imageUrl: String? = null,
+)
+
+@Serializable
+data class PrePaymentRequest(
+    val transactionId: String
+)
+
+@Serializable
+data class CalendarAddedRequest(
+    val calendarEventId: String
 )

@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Put, Patch, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller, Get, Post, Put, Patch, Body, Param, Query, UseGuards, Request,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AppointmentsService } from './appointments.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -14,7 +16,7 @@ export class AppointmentsController {
   constructor(private readonly svc: AppointmentsService) {}
 
   @Post()
-  @ApiOperation({ summary: 'ثبت رزرو جدید' })
+  @ApiOperation({ summary: 'ثبت رزرو جدید (با پشتیبانی پیش‌پرداخت و انتخاب استایل)' })
   create(@Request() req, @Body() dto: any) {
     return this.svc.create(req.user.id, dto);
   }
@@ -27,7 +29,11 @@ export class AppointmentsController {
 
   @Get('available-slots')
   @ApiOperation({ summary: 'زمان‌های خالی برای رزرو' })
-  getSlots(@Query('staffId') staffId: string, @Query('serviceId') serviceId: string, @Query('date') date: string) {
+  getSlots(
+    @Query('staffId') staffId: string,
+    @Query('serviceId') serviceId: string,
+    @Query('date') date: string,
+  ) {
     return this.svc.getAvailableSlots(staffId, serviceId, date);
   }
 
@@ -35,7 +41,11 @@ export class AppointmentsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiOperation({ summary: 'همه رزروها (ادمین/کارمند)' })
-  findAll(@Query('date') date?: string, @Query('staffId') staffId?: string, @Query('status') status?: string) {
+  findAll(
+    @Query('date') date?: string,
+    @Query('staffId') staffId?: string,
+    @Query('status') status?: string,
+  ) {
     return this.svc.findAll({ date, staffId, status });
   }
 
@@ -48,7 +58,10 @@ export class AppointmentsController {
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiOperation({ summary: 'تغییر وضعیت رزرو' })
-  updateStatus(@Param('id') id: string, @Body() body: { status: string; reason?: string }) {
+  updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string; reason?: string },
+  ) {
     return this.svc.updateStatus(id, body.status, body.reason);
   }
 
@@ -59,8 +72,31 @@ export class AppointmentsController {
   }
 
   @Post(':id/review')
-  @ApiOperation({ summary: 'ثبت نظر و امتیاز' })
-  review(@Param('id') id: string, @Request() req, @Body() body: { rating: number; text?: string }) {
+  @ApiOperation({ summary: 'ثبت نظر و امتیاز (بعد از سرویس)' })
+  review(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() body: { rating: number; text?: string },
+  ) {
     return this.svc.addReview(id, req.user.id, body.rating, body.text);
+  }
+
+  @Patch(':id/pre-payment')
+  @ApiOperation({ summary: 'تأیید پیش‌پرداخت رزرو' })
+  confirmPrePayment(
+    @Param('id') id: string,
+    @Body() body: { transactionId: string },
+  ) {
+    return this.svc.confirmPrePayment(id, body.transactionId);
+  }
+
+  @Patch(':id/calendar-added')
+  @ApiOperation({ summary: 'ثبت اضافه‌شدن رزرو به تقویم گوشی' })
+  markCalendarAdded(
+    @Param('id') id: string,
+    @Request() req,
+    @Body() body: { calendarEventId: string },
+  ) {
+    return this.svc.markCalendarAdded(id, req.user.id, body.calendarEventId);
   }
 }

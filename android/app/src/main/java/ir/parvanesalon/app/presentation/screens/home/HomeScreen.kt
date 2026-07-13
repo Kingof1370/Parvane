@@ -7,206 +7,248 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import coil.compose.AsyncImage
 import ir.parvanesalon.app.data.remote.models.StaffDto
-import ir.parvanesalon.app.presentation.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+data class QuickAction(val icon: String, val label: String, val route: String)
+
 @Composable
 fun HomeScreen(
-    onNavigateToServices: () -> Unit,
-    onNavigateToAppointments: () -> Unit,
-    onNavigateToProfile: () -> Unit,
-    onNavigateToStaff: (String) -> Unit,
+    onNavigate: (String) -> Unit,
+    onStaffClick: (String) -> Unit,
+    unreadNotifications: Int = 0,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = true,
-                    onClick = {},
-                    icon = { Icon(Icons.Default.Home, null) },
-                    label = { Text("خانه") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToServices,
-                    icon = { Icon(Icons.Default.Spa, null) },
-                    label = { Text("خدمات") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToAppointments,
-                    icon = { Icon(Icons.Default.CalendarMonth, null) },
-                    label = { Text("رزروها") }
-                )
-                NavigationBarItem(
-                    selected = false,
-                    onClick = onNavigateToProfile,
-                    icon = { Icon(Icons.Default.Person, null) },
-                    label = { Text("پروفایل") }
-                )
-            }
-        }
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.padding(padding).fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
-        ) {
-            // Header gradient
-            item {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Brush.verticalGradient(listOf(GradientStart, GradientMid)))
-                        .padding(24.dp)
-                ) {
-                    Column {
-                        Text(
-                            "سالن زیبایی پروانه ✿",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                color = MaterialTheme.colorScheme.onPrimary,
+    val quickActions = listOf(
+        QuickAction("📅", "رزرو نوبت", "services"),
+        QuickAction("🖼️", "گالری استایل", "gallery"),
+        QuickAction("💬", "مشاوره آنلاین", "chat"),
+        QuickAction("⭐", "امتیاز وفاداری", "loyalty"),
+    )
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFFAF7FF)),
+        contentPadding = PaddingValues(bottom = 100.dp)
+    ) {
+        item {
+            // Header
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.horizontalGradient(listOf(Color(0xFFE91E8C), Color(0xFF9C27B0)))
+                    )
+                    .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 40.dp)
+            ) {
+                Column {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                "سالن زیبایی پروانه ✿",
+                                color = Color.White,
+                                fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold
                             )
-                        )
-                        Text(
-                            "خوش آمدید! رزرو نوبت خود را ثبت کنید",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            if (uiState.userName != null) {
+                                Text("سلام، ${uiState.userName}!", color = Color.White.copy(0.9f), fontSize = 14.sp)
+                            }
+                        }
+                        Badge(
+                            modifier = Modifier
+                                .clickable { onNavigate("notifications") }
+                                .size(44.dp)
+                                .background(Color.White.copy(0.2f), CircleShape),
+                            containerColor = if (unreadNotifications > 0) Color(0xFFFFF176) else Color.Transparent
+                        ) {
+                            Icon(
+                                Icons.Default.Notifications,
+                                null,
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
                             )
-                        )
+                        }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                    if (uiState.loyaltyPoints > 0) {
+                        Surface(
+                            color = Color.White.copy(0.2f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Star, null, tint = Color(0xFFFFF176), modifier = Modifier.size(16.dp))
+                                Text(" ${uiState.loyaltyPoints} امتیاز وفاداری", color = Color.White, fontSize = 13.sp)
+                            }
+                        }
                     }
                 }
             }
+        }
 
-            // Quick actions
-            item {
+        item {
+            // Quick actions card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .offset(y = (-20).dp)
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                elevation = CardDefaults.cardElevation(8.dp)
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    quickActions.forEach { action ->
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clickable { onNavigate(action.route) }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Box(
+                                Modifier
+                                    .size(48.dp)
+                                    .background(Color(0xFFFCF0F8), CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(action.icon, fontSize = 22.sp)
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Text(action.label, fontSize = 11.sp, color = Color.Gray, fontWeight = FontWeight.Medium)
+                        }
+                    }
+                }
+            }
+        }
+
+        item {
+            Text(
+                "متخصصان ما",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                modifier = Modifier.padding(start = 16.dp, bottom = 12.dp)
+            )
+        }
+
+        if (uiState.isLoading) {
+            item {
+                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = Color(0xFFE91E8C))
+                }
+            }
+        } else {
+            item {
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    QuickAction(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Spa,
-                        label = "رزرو نوبت",
-                        onClick = onNavigateToServices
-                    )
-                    QuickAction(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.CalendarMonth,
-                        label = "نوبت‌های من",
-                        onClick = onNavigateToAppointments
-                    )
-                    QuickAction(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Default.Star,
-                        label = "خدمات ویژه",
-                        onClick = onNavigateToServices
-                    )
-                }
-            }
-
-            // Staff section
-            item {
-                Text(
-                    "متخصصان ما",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                )
-            }
-
-            item {
-                if (uiState.isLoading) {
-                    Box(Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    LazyRow(
-                        contentPadding = PaddingValues(horizontal = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(uiState.staff) { staff ->
-                            StaffCard(staff = staff, onClick = { onNavigateToStaff(staff.id) })
-                        }
-                    }
-                }
-            }
-
-            // Recent appointment reminder
-            uiState.nextAppointment?.let { appt ->
-                item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(
-                                "نوبت بعدی شما",
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            Spacer(Modifier.height(4.dp))
-                            Text("${appt.service.name} — ${appt.date} ساعت ${appt.startTime}", style = MaterialTheme.typography.bodyMedium)
-                        }
+                    items(uiState.staff) { staff ->
+                        StaffCard(staff = staff, onClick = { onStaffClick(staff.id) })
                     }
                 }
             }
         }
-    }
-}
 
-@Composable
-fun QuickAction(modifier: Modifier = Modifier, icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Card(
-        modifier = modifier.clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp).fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
-            Text(label, style = MaterialTheme.typography.labelSmall, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-        }
-    }
-}
-
-@Composable
-fun StaffCard(staff: StaffDto, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier.width(140.dp).clickable(onClick = onClick),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Box(
-                modifier = Modifier.size(64.dp).clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
+        item {
+            Spacer(Modifier.height(20.dp))
+            // About / copyright card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFCF0F8))
             ) {
-                Text(staff.fullName.first().toString(), style = MaterialTheme.typography.titleLarge.copy(color = MaterialTheme.colorScheme.primary))
+                Column(
+                    Modifier.padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("✿", fontSize = 32.sp)
+                    Spacer(Modifier.height(8.dp))
+                    Text("سالن زیبایی پروانه", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color(0xFFE91E8C))
+                    Spacer(Modifier.height(4.dp))
+                    Text("توسعه‌دهنده: علی بهمنی", fontSize = 13.sp, color = Color.Gray)
+                    Text("تماس: ۰۹۹۱۵۴۲۰۵۵۸", fontSize = 13.sp, color = Color.Gray)
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "© ۱۴۰۳ — تمامی حقوق محفوظ است",
+                        fontSize = 12.sp,
+                        color = Color.Gray.copy(0.7f)
+                    )
+                }
             }
-            Text(staff.fullName, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium), maxLines = 1)
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                Icon(Icons.Default.Star, null, tint = GoldTertiary, modifier = Modifier.size(14.dp))
-                Text(staff.rating.toString(), style = MaterialTheme.typography.labelSmall)
+        }
+    }
+}
+
+@Composable
+private fun StaffCard(staff: StaffDto, onClick: () -> Unit) {
+    Card(
+        modifier = Modifier
+            .width(160.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(2.dp)
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .background(Brush.verticalGradient(listOf(Color(0xFFE91E8C).copy(0.1f), Color(0xFF9C27B0).copy(0.1f))))
+            ) {
+                if (staff.avatar != null) {
+                    AsyncImage(
+                        model = staff.avatar,
+                        contentDescription = staff.fullName,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(staff.fullName.first().toString(), fontSize = 48.sp, color = Color(0xFFE91E8C), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+            Column(Modifier.padding(12.dp)) {
+                Text(staff.fullName, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1)
+                if (staff.section != null) Text(staff.section, fontSize = 12.sp, color = Color.Gray, maxLines = 1)
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
+                    Icon(Icons.Default.Star, null, tint = Color(0xFFFFC107), modifier = Modifier.size(14.dp))
+                    Text(" ${staff.rating} (${staff.totalReviews})", fontSize = 12.sp, color = Color.Gray)
+                }
+                if (staff.experienceYears > 0) {
+                    Text("${staff.experienceYears} سال تجربه", fontSize = 11.sp, color = Color(0xFFE91E8C))
+                }
             }
         }
     }
