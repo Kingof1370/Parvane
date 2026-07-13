@@ -17,25 +17,11 @@ export class AuthService {
   ) {}
 
   async sendOtp(phone: string) {
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  console.log(`📱 کد تأیید برای : `);
-  let user = await this.userRepo.findOne({ where: { phone } });
-  if (user) {
-    user.otp = otp;
-    user.otpExpiry = new Date(Date.now() + 5 * 60000);
-    await this.userRepo.save(user);
-  } else {
-    user = this.userRepo.create({
-      phone,
-      otp,
-      otpExpiry: new Date(Date.now() + 5 * 60000),
-      fullName: "کاربر جدید",
-    });
-    await this.userRepo.save(user);
-  }
-  // await this.smsService.sendSms(phone, `کد تأیید شما: `);
-  return { message: "کد تایید ارسال شد", code: otp };
-} });
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  console.log(`📱 کد تأیید برای ${phone}: ${otp}`);
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    let user = await this.userRepo.findOne({ where: { phone } });
     if (!user) {
       user = this.userRepo.create({ phone, fullName: 'کاربر جدید', otp, otpExpiry: expiry });
     } else {
@@ -46,7 +32,7 @@ export class AuthService {
 
     // In production: send via SMS service
     console.log(`OTP for ${phone}: ${otp}`);
-    return { message: 'کد تأیید ارسال شد', expiresIn: 300 };
+    return { message: "کد تایید ارسال شد", code: otp };
   }
 
   async verifyOtp(phone: string, otp: string) {
@@ -115,12 +101,12 @@ export class AuthService {
 
   async logout(userId: string) {
     await this.userRepo.update(userId, { refreshToken: null, fcmToken: null });
-    return { message: 'با موفقیت خارج شدید' };
+    return { message: "کد تایید ارسال شد", code: otp };
   }
 
   async updateFcmToken(userId: string, fcmToken: string) {
     await this.userRepo.update(userId, { fcmToken });
-    return { message: 'توکن FCM ذخیره شد' };
+    return { message: "کد تایید ارسال شد", code: otp };
   }
 
   async validateUser(userId: string) {
