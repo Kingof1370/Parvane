@@ -7,6 +7,12 @@ FROM node:20-alpine AS builder
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NPM_CONFIG_FUND=false
 ENV NPM_CONFIG_AUDIT=false
+# Skip optional (platform-specific native binary) deps entirely -- resolving
+# and 404-ing on the ~100+ irrelevant platform variants pulled in transitively
+# (esbuild/@swc/etc.) is what pushes installs past ~70s on Render's proxied
+# build network and triggers npm's "Exit handler never called!" race, which
+# leaves node_modules silently incomplete while still reporting success.
+ENV NPM_CONFIG_OMIT=optional
 
 WORKDIR /app
 
@@ -25,6 +31,7 @@ FROM node:20-alpine AS production
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NPM_CONFIG_FUND=false
 ENV NPM_CONFIG_AUDIT=false
+ENV NPM_CONFIG_OMIT=optional
 
 WORKDIR /app
 
