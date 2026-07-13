@@ -34,6 +34,13 @@ import { HealthController } from './health.controller';
         // explicit env var so it can be disabled later without another code change.
         synchronize: config.get('DATABASE_SYNCHRONIZE', 'true') === 'true',
         logging: config.get('NODE_ENV') === 'development',
+        // Render's managed Postgres requires SSL for connections; local/dev
+        // Postgres does not support it, so default to on and let it be
+        // disabled explicitly via DATABASE_SSL=false for local development.
+        ssl:
+          config.get('DATABASE_SSL', 'true') === 'true'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
       inject: [ConfigService],
     }),
