@@ -17,28 +17,24 @@ export class AuthService {
   ) {}
 
   async sendOtp(phone: string) {
-  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
   console.log(`📱 کد تأیید برای : `);
   let user = await this.userRepo.findOne({ where: { phone } });
   if (user) {
-    user.otp = otpCode;
+    user.otp = otp;
     user.otpExpiry = new Date(Date.now() + 5 * 60000);
     await this.userRepo.save(user);
   } else {
     user = this.userRepo.create({
       phone,
-      otp: otpCode,
+      otp,
       otpExpiry: new Date(Date.now() + 5 * 60000),
       fullName: "کاربر جدید",
     });
     await this.userRepo.save(user);
   }
-  return {
-    success: true,
-    code: otpCode,
-    message: "کد تأیید ارسال شد (فقط برای تست)",
-  };
   // await this.smsService.sendSms(phone, `کد تأیید شما: `);
+  return { message: "کد تایید ارسال شد", code: otp };
 } });
     if (!user) {
       user = this.userRepo.create({ phone, fullName: 'کاربر جدید', otp, otpExpiry: expiry });
@@ -68,20 +64,7 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-  const exists = await this.userRepo.findOne({
-    where: [{ phone: dto.phone }, { email: dto.email }],
-  });
-  if (exists) throw new BadRequestException("کاربر با این مشخصات وجود دارد");
-  const hash = await bcrypt.hash(dto.password, 10);
-  const user = this.userRepo.create({
-    ...dto,
-    password: hash,
-    isVerified: true,
-    isActive: true,
-  });
-  await this.userRepo.save(user);
-  return this.generateTokens(user);
-}, { email: dto.email }] });
+    const exists = await this.userRepo.findOne({ where: [{ phone: dto.phone }, { email: dto.email }] });
     if (exists) throw new BadRequestException('کاربر با این مشخصات وجود دارد');
 
     const hash = await bcrypt.hash(dto.password, 10);
