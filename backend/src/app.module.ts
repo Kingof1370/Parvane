@@ -29,7 +29,10 @@ import { HealthController } from './health.controller';
         password: config.get('DATABASE_PASSWORD', 'password'),
         database: config.get('DATABASE_NAME', 'parvane_salon'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get('NODE_ENV') !== 'production',
+        // No migrations exist yet in this project, so schema sync must stay on even in
+        // production until a proper migration workflow is introduced. Controlled by an
+        // explicit env var so it can be disabled later without another code change.
+        synchronize: config.get('DATABASE_SYNCHRONIZE', 'true') === 'true',
         logging: config.get('NODE_ENV') === 'development',
       }),
       inject: [ConfigService],
