@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import ir.parvanesalon.app.data.local.TokenManager
 import ir.parvanesalon.app.data.remote.ApiService
+import ir.parvanesalon.app.data.remote.models.LoginRequest
+import ir.parvanesalon.app.data.remote.models.RegisterRequest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -13,7 +15,6 @@ import javax.inject.Inject
 
 data class AuthUiState(
     val isLoading: Boolean = false,
-    val otpSent: Boolean = false,
     val isAuthenticated: Boolean = false,
     val error: String? = null
 )
@@ -27,19 +28,25 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
-    fun sendOtp(phone: String) {
-        if (phone.length != 11 || !phone.startsWith("09")) {
-            _uiState.update { it.copy(error = "شماره موبایل معتبر نیست") }
+    fun login(phone: String, password: String) {
+        if (phone.isBlank() || password.isBlank()) {
+            _uiState.update { it.copy(error = "لطفاً تمام فیلدها را پر کنید") }
             return
         }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val response = api.sendOtp(mapOf("phone" to phone))
-                if (response.isSuccessful) {
-                    _uiState.update { it.copy(isLoading = false, otpSent = true) }
+                val response = api.login(LoginRequest(identifier = phone, password = password))
+                if (response.isSuccessful && response.body() != null) {
+                    val auth = response.body()!!
+                    tokenManager.saveTokens(auth.accessToken, auth.refreshToken, auth.user.id, auth.user.role)
+                    _uiState.update { it.copy(isLoading = false, isAuthenticated = true) }
                 } else {
-                    _uiState.update { it.copy(isLoading = false, error = "خطا در ارسال کد") }
+                    val errorMsg = when (response.code()) {
+                        401 -> "شماره تلفن یا رمز عبور اشتباه است"
+                        else -> "خطا در ورود به حساب"
+                    }
+                    _uiState.update { it.copy(isLoading = false, error = errorMsg) }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = "خطا در اتصال به سرور") }
@@ -47,21 +54,52 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun verifyOtp(phone: String, otp: String) {
+    fun register(fullName: String, phone: String, email: String?, password: String, confirmPassword: String) {
+        if (fullName.isBlank() || phone.isBlank() || password.isBlank()) {
+            _uiState.update { it.copy(error = "لطفاً فیلدهای اجباری را پر کنید") }
+            return
+        }
+        if (!phone.matches(Regex("^09[0-9]{9}$"))) {
+            _uiState.update { it.copy(error = "شماره موبایل باید با 09 شروع شده و 11 رقم باشد") }
+            return
+        }
+        if (password.length < 6) {
+            _uiState.update { it.copy(error = "رمز عبور باید حداقل 6 کاراکتر باشد") }
+            return
+        }
+        if (password != confirmPassword) {
+            _uiState.update { it.copy(error = "تکرار رمز عبور مطابقت ندارد") }
+            return
+        }
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, error = null) }
             try {
-                val response = api.verifyOtp(mapOf("phone" to phone, "otp" to otp))
+                val response = api.register(
+                    RegisterRequest(
+                        fullName = fullName.trim(),
+                        phone = phone.trim(),
+                        email = email?.trim()?.ifBlank { null },
+                        password = password
+                    )
+                )
                 if (response.isSuccessful && response.body() != null) {
                     val auth = response.body()!!
                     tokenManager.saveTokens(auth.accessToken, auth.refreshToken, auth.user.id, auth.user.role)
                     _uiState.update { it.copy(isLoading = false, isAuthenticated = true) }
                 } else {
-                    _uiState.update { it.copy(isLoading = false, error = "کد تأیید اشتباه است") }
+                    val errorMsg = when (response.code()) {
+                        400 -> "این شماره تلفن قبلاً ثبت‌نام کرده است"
+                        else -> "خطا در ثبت‌نام"
+                    }
+                    _uiState.update { it.copy(isLoading = false, error = errorMsg) }
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false, error = "خطا در اتصال به سرور") }
             }
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
     }
 }

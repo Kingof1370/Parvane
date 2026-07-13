@@ -7,11 +7,8 @@ import retrofit2.http.*
 interface ApiService {
 
     // Auth
-    @POST("auth/send-otp")
-    suspend fun sendOtp(@Body body: Map<String, String>): Response<MessageResponse>
-
-    @POST("auth/verify-otp")
-    suspend fun verifyOtp(@Body body: Map<String, String>): Response<AuthResponse>
+    @POST("auth/register")
+    suspend fun register(@Body body: RegisterRequest): Response<AuthResponse>
 
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): Response<AuthResponse>

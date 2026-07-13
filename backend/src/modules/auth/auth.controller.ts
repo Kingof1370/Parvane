@@ -1,8 +1,6 @@
 import { Controller, Post, Body, Get, UseGuards, Request, Patch } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { SendOtpDto } from './dto/send-otp.dto';
-import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -12,32 +10,20 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('send-otp')
-  @ApiOperation({ summary: 'ارسال کد تأیید به شماره موبایل' })
-  sendOtp(@Body() dto: SendOtpDto) {
-    return this.authService.sendOtp(dto.phone);
-  }
-
-  @Post('verify-otp')
-  @ApiOperation({ summary: 'تأیید کد OTP و ورود/ثبت‌نام' })
-  verifyOtp(@Body() dto: VerifyOtpDto) {
-    return this.authService.verifyOtp(dto.phone, dto.otp);
-  }
-
   @Post('register')
-  @ApiOperation({ summary: 'ثبت‌نام با ایمیل و رمز' })
+  @ApiOperation({ summary: 'ثبت‌نام با مشخصات کامل (بدون نیاز به کد SMS)' })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('login')
-  @ApiOperation({ summary: 'ورود با ایمیل و رمز' })
+  @ApiOperation({ summary: 'ورود با شماره تلفن/ایمیل و رمز عبور' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
 
   @Post('admin/login')
-  @ApiOperation({ summary: 'ورود ادمین' })
+  @ApiOperation({ summary: 'ورود ادمین/کارمند' })
   adminLogin(@Body() dto: LoginDto) {
     return this.authService.adminLogin(dto);
   }

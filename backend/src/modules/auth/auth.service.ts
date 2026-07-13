@@ -16,42 +16,14 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async sendOtp(phone: string) {
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  console.log(`📱 کد تأیید برای ${phone}: ${otp}`);
-    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-
-    let user = await this.userRepo.findOne({ where: { phone } });
-    if (!user) {
-      user = this.userRepo.create({ phone, fullName: 'کاربر جدید', otp, otpExpiry: expiry });
-    } else {
-      user.otp = otp;
-      user.otpExpiry = expiry;
-    }
-    await this.userRepo.save(user);
-
-    // In production: send via SMS service
-    console.log(`OTP for ${phone}: ${otp}`);
-    return { message: "کد تایید ارسال شد", code: otp };
-  }
-
-  async verifyOtp(phone: string, otp: string) {
-    const user = await this.userRepo.findOne({ where: { phone } });
-    if (!user) throw new NotFoundException('کاربر یافت نشد');
-    if (user.otp !== otp) throw new BadRequestException('کد تأیید اشتباه است');
-    if (user.otpExpiry < new Date()) throw new BadRequestException('کد تأیید منقضی شده');
-
-    user.otp = null;
-    user.otpExpiry = null;
-    user.isVerified = true;
-    await this.userRepo.save(user);
-
-    return this.generateTokens(user);
-  }
-
   async register(dto: RegisterDto) {
-    const exists = await this.userRepo.findOne({ where: [{ phone: dto.phone }, { email: dto.email }] });
-    if (exists) throw new BadRequestException('کاربر با این مشخصات وجود دارد');
+    const exists = await this.userRepo.findOne({
+      where: [
+        { phone: dto.phone },
+        ...(dto.email ? [{ email: dto.email }] : []),
+      ],
+    });
+    if (exists) throw new BadRequestException('کاربر با این شماره تلفن یا ایمیل قبلاً ثبت‌نام کرده است');
 
     const hash = await bcrypt.hash(dto.password, 10);
     const user = this.userRepo.create({ ...dto, password: hash, isVerified: true });
@@ -62,17 +34,18 @@ export class AuthService {
   async login(dto: LoginDto) {
     const user = await this.userRepo.findOne({ where: { phone: dto.identifier } })
       || await this.userRepo.findOne({ where: { email: dto.identifier } });
-    if (!user || !user.password) throw new UnauthorizedException('مشخصات وارد شده اشتباه است');
+    if (!user || !user.password) throw new UnauthorizedException('شماره تلفن یا رمز عبور اشتباه است');
 
     const valid = await bcrypt.compare(dto.password, user.password);
-    if (!valid) throw new UnauthorizedException('رمز عبور اشتباه است');
+    if (!valid) throw new UnauthorizedException('شماره تلفن یا رمز عبور اشتباه است');
     if (!user.isActive) throw new UnauthorizedException('حساب کاربری غیرفعال است');
 
     return this.generateTokens(user);
   }
 
   async adminLogin(dto: LoginDto) {
-    const user = await this.userRepo.findOne({ where: { email: dto.identifier } });
+    const user = await this.userRepo.findOne({ where: { email: dto.identifier } })
+      || await this.userRepo.findOne({ where: { phone: dto.identifier } });
     if (!user || user.role === UserRole.CLIENT) throw new UnauthorizedException('دسترسی غیرمجاز');
 
     const valid = await bcrypt.compare(dto.password, user.password);
@@ -101,12 +74,12 @@ export class AuthService {
 
   async logout(userId: string) {
     await this.userRepo.update(userId, { refreshToken: null, fcmToken: null });
-    return { message: "کد تایید ارسال شد", code: otp };
+    return { message: 'با موفقیت خارج شدید' };
   }
 
   async updateFcmToken(userId: string, fcmToken: string) {
     await this.userRepo.update(userId, { fcmToken });
-    return { message: "کد تایید ارسال شد", code: otp };
+    return { message: 'توکن FCM با موفقیت ثبت شد' };
   }
 
   async validateUser(userId: string) {

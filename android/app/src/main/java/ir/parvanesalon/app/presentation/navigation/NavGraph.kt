@@ -1,15 +1,11 @@
 package ir.parvanesalon.app.presentation.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import ir.parvanesalon.app.presentation.screens.auth.LoginScreen
-import ir.parvanesalon.app.presentation.screens.auth.OtpScreen
 import ir.parvanesalon.app.presentation.screens.home.HomeScreen
 import ir.parvanesalon.app.presentation.screens.booking.BookingScreen
 import ir.parvanesalon.app.presentation.screens.appointments.AppointmentsScreen
@@ -21,9 +17,6 @@ import ir.parvanesalon.app.presentation.screens.staff.StaffDetailScreen
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Login : Screen("login")
-    object Otp : Screen("otp/{phone}") {
-        fun createRoute(phone: String) = "otp/$phone"
-    }
     object Home : Screen("home")
     object Services : Screen("services")
     object Booking : Screen("booking/{serviceId}/{staffId}") {
@@ -46,23 +39,26 @@ fun ParvaneNavHost(
     ) {
         composable(Screen.Splash.route) {
             SplashScreen(
-                onNavigateToLogin = { navController.navigate(Screen.Login.route) { popUpTo(Screen.Splash.route) { inclusive = true } } },
-                onNavigateToHome = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Splash.route) { inclusive = true } } }
+                onNavigateToLogin = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                },
+                onNavigateToHome = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
             )
         }
 
         composable(Screen.Login.route) {
             LoginScreen(
-                onNavigateToOtp = { phone -> navController.navigate(Screen.Otp.createRoute(phone)) }
-            )
-        }
-
-        composable(Screen.Otp.route) { backStack ->
-            val phone = backStack.arguments?.getString("phone") ?: ""
-            OtpScreen(
-                phone = phone,
-                onSuccess = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Login.route) { inclusive = true } } },
-                onBack = { navController.popBackStack() }
+                onSuccess = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
+                    }
+                }
             )
         }
 
@@ -77,7 +73,9 @@ fun ParvaneNavHost(
 
         composable(Screen.Services.route) {
             ServicesScreen(
-                onNavigateToBooking = { serviceId, staffId -> navController.navigate(Screen.Booking.createRoute(serviceId, staffId)) },
+                onNavigateToBooking = { serviceId, staffId ->
+                    navController.navigate(Screen.Booking.createRoute(serviceId, staffId))
+                },
                 onBack = { navController.popBackStack() }
             )
         }
@@ -101,7 +99,11 @@ fun ParvaneNavHost(
 
         composable(Screen.Profile.route) {
             ProfileScreen(
-                onLogout = { navController.navigate(Screen.Login.route) { popUpTo(Screen.Home.route) { inclusive = true } } },
+                onLogout = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
+                },
                 onBack = { navController.popBackStack() }
             )
         }

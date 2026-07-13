@@ -30,6 +30,14 @@ data class LoginRequest(
 )
 
 @Serializable
+data class RegisterRequest(
+    val fullName: String,
+    val phone: String,
+    val email: String? = null,
+    val password: String
+)
+
+@Serializable
 data class ServiceDto(
     val id: String,
     val name: String,
