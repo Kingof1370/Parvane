@@ -115,8 +115,9 @@ export class AppointmentsService {
   }
 
   async cancelByClient(id: string, clientId: string, reason?: string) {
-    const appt = await this.findOne(id);
-    if ((appt.client as any).id !== clientId) throw new BadRequestException('دسترسی ندارید');
+    const appt = await this.apptRepo.findOne({ where: { id }, relations: ['client'] });
+    if (!appt) throw new NotFoundException('رزرو یافت نشد');
+    if (appt.client?.id !== clientId) throw new BadRequestException('دسترسی ندارید');
     if ([AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED].includes(appt.status)) {
       throw new BadRequestException('این رزرو قابل لغو نیست');
     }
@@ -125,8 +126,9 @@ export class AppointmentsService {
   }
 
   async addReview(id: string, clientId: string, rating: number, text?: string) {
-    const appt = await this.findOne(id);
-    if ((appt.client as any).id !== clientId) throw new BadRequestException('دسترسی ندارید');
+    const appt = await this.apptRepo.findOne({ where: { id }, relations: ['client'] });
+    if (!appt) throw new NotFoundException('رزرو یافت نشد');
+    if (appt.client?.id !== clientId) throw new BadRequestException('دسترسی ندارید');
     if (appt.status !== AppointmentStatus.COMPLETED) throw new BadRequestException('فقط رزروهای تکمیل‌شده قابل امتیازدهی هستند');
     await this.apptRepo.update(id, { reviewRating: rating, reviewText: text });
     return { message: 'نظر شما ثبت شد' };

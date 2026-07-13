@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { StaffService } from './staff.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -21,7 +21,7 @@ export class StaffController {
 
   @Get(':id/availability')
   @ApiOperation({ summary: 'زمان‌های خالی متخصص' })
-  getAvailability(@Param('id') id: string, @Param('date') date: string) {
+  getAvailability(@Param('id') id: string, @Query('date') date: string) {
     return this.staffService.getAvailability(id, date);
   }
 
