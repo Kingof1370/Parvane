@@ -11,7 +11,11 @@ ENV NPM_CONFIG_AUDIT=false
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+# `npm ci` has a known race ("Exit handler never called!") on some constrained/
+# proxied build hosts (reproduced consistently on Render's builders) that leaves
+# node_modules silently incomplete while still reporting success. `npm install`
+# does not hit the same code path, so it is used here instead.
+RUN npm install
 
 COPY . .
 RUN npm run build
@@ -25,7 +29,7 @@ ENV NPM_CONFIG_AUDIT=false
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
 
