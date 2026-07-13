@@ -8,10 +8,6 @@ ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NPM_CONFIG_FUND=false
 ENV NPM_CONFIG_AUDIT=false
 
-# bcrypt is a native module and needs a real toolchain to compile on Alpine (musl);
-# without these, npm ci would fail outright when building the native binding.
-RUN apk add --no-cache python3 make g++
-
 WORKDIR /app
 
 COPY package*.json ./
@@ -25,8 +21,6 @@ FROM node:20-alpine AS production
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 ENV NPM_CONFIG_FUND=false
 ENV NPM_CONFIG_AUDIT=false
-
-RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 

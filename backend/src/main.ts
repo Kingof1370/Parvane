@@ -3,7 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { AppModule } from './app.module';
 import { User, UserRole } from './modules/auth/entities/user.entity';
 import * as compression from 'compression';
