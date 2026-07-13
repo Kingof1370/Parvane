@@ -1,5 +1,6 @@
 import {
-  Injectable, UnauthorizedException, BadRequestException, NotFoundException,
+  Injectable, UnauthorizedException, BadRequestException,
+  NotFoundException, ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -23,7 +24,7 @@ export class AuthService {
         ...(dto.email ? [{ email: dto.email }] : []),
       ],
     });
-    if (exists) throw new BadRequestException('کاربر با این شماره تلفن یا ایمیل قبلاً ثبت‌نام کرده است');
+    if (exists) throw new ConflictException('کاربر با این شماره تلفن یا ایمیل قبلاً ثبت‌نام کرده است');
 
     const hash = await bcrypt.hash(dto.password, 10);
     const user = this.userRepo.create({ ...dto, password: hash, isVerified: true });

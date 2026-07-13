@@ -2,8 +2,11 @@ package ir.parvanesalon.app.presentation.screens.auth
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -17,13 +20,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import ir.parvanesalon.app.R
 import ir.parvanesalon.app.presentation.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,7 +69,7 @@ fun LoginScreen(
             .background(
                 Brush.verticalGradient(
                     colors = listOf(GradientStart, GradientMid),
-                    endY = 400f
+                    endY = 500f
                 )
             )
     ) {
@@ -70,37 +78,55 @@ fun LoginScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
-            // Header
+            // ===== هدر: عکس صاحب سالن + نام کامل =====
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 60.dp, bottom = 32.dp),
+                    .padding(top = 56.dp, bottom = 28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    "✿",
-                    style = MaterialTheme.typography.displayMedium.copy(
-                        color = MaterialTheme.colorScheme.onPrimary
+                // عکس دایره‌ای صاحب سالن
+                Box(
+                    modifier = Modifier
+                        .size(110.dp)
+                        .clip(CircleShape)
+                        .border(
+                            width = 3.dp,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.5f),
+                            shape = CircleShape
+                        )
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.owner_photo),
+                        contentDescription = "پروانه اکبرپور - مدیر سالن",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
                     )
-                )
-                Spacer(Modifier.height(8.dp))
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // نام کامل سالن
                 Text(
-                    "سالن زیبایی پروانه",
+                    text = "سالن زیبایی پروانه اکبرپور",
                     style = MaterialTheme.typography.headlineSmall.copy(
                         color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
                     )
                 )
+
                 Spacer(Modifier.height(4.dp))
+
                 Text(
-                    "خوش آمدید",
+                    text = "خوش آمدید",
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                     )
                 )
             }
 
-            // Card
+            // ===== کارت فرم ورود / ثبت‌نام =====
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.extraLarge.copy(
@@ -117,16 +143,6 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Tab(
-                            selected = selectedTab == 0,
-                            onClick = { selectedTab = 0; viewModel.clearError() },
-                            text = {
-                                Text(
-                                    "ورود",
-                                    fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
-                                )
-                            }
-                        )
-                        Tab(
                             selected = selectedTab == 1,
                             onClick = { selectedTab = 1; viewModel.clearError() },
                             text = {
@@ -136,33 +152,45 @@ fun LoginScreen(
                                 )
                             }
                         )
+                        Tab(
+                            selected = selectedTab == 0,
+                            onClick = { selectedTab = 0; viewModel.clearError() },
+                            text = {
+                                Text(
+                                    "ورود",
+                                    fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal
+                                )
+                            }
+                        )
                     }
 
                     Spacer(Modifier.height(24.dp))
 
-                    // Error message
+                    // نمایش خطا
                     AnimatedVisibility(visible = uiState.error != null) {
                         uiState.error?.let { errorMsg ->
-                            Card(
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.errorContainer
-                                ),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(
-                                    errorMsg,
-                                    modifier = Modifier.padding(12.dp),
-                                    color = MaterialTheme.colorScheme.onErrorContainer,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+                            Column {
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        errorMsg,
+                                        modifier = Modifier.padding(12.dp),
+                                        color = MaterialTheme.colorScheme.onErrorContainer,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                Spacer(Modifier.height(12.dp))
                             }
-                            Spacer(Modifier.height(12.dp))
                         }
                     }
 
                     AnimatedContent(targetState = selectedTab, label = "auth_tab") { tab ->
                         if (tab == 0) {
-                            // ===== ورود =====
+                            // ===== تب ورود =====
                             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                                 Text(
                                     "ورود به حساب کاربری",
@@ -178,7 +206,8 @@ fun LoginScreen(
                                     leadingIcon = { Icon(Icons.Default.Phone, null) },
                                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                                     singleLine = true,
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier.fillMaxWidth(),
+                                    supportingText = { Text("مثال: 09123456789") }
                                 )
 
                                 OutlinedTextField(
@@ -226,7 +255,7 @@ fun LoginScreen(
                                 }
                             }
                         } else {
-                            // ===== ثبت‌نام =====
+                            // ===== تب ثبت‌نام =====
                             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                                 Text(
                                     "ایجاد حساب کاربری جدید",
