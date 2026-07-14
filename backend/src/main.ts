@@ -10,11 +10,52 @@ import * as compression from 'compression';
 import helmet from 'helmet';
 
 async function seedAdmin(app: import('@nestjs/common').INestApplicationContext) {
+  const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
+
+  // Seed the specific admin Parvane Akbarpour (پروانه اکبرپور)
+  const targetPhone = '09019667604';
+  const targetName = 'پروانه اکبرپور';
+  const targetPassword = 'Ali2560199068al@';
+
+  const existingParvane = await userRepo.findOne({ where: { phone: targetPhone } });
+  if (!existingParvane) {
+    const hash = await bcrypt.hash(targetPassword, 10);
+    const parvaneAdmin = userRepo.create({
+      email: 'parvane@parvane-salon.ir',
+      phone: targetPhone,
+      fullName: targetName,
+      password: hash,
+      role: UserRole.ADMIN,
+      isActive: true,
+      isVerified: true,
+    });
+    await userRepo.save(parvaneAdmin);
+    console.log(`✅ Default Salon Admin seeded: ${targetName} (${targetPhone})`);
+  } else {
+    let updated = false;
+    if (existingParvane.role !== UserRole.ADMIN) {
+      existingParvane.role = UserRole.ADMIN;
+      updated = true;
+    }
+    if (!existingParvane.isActive) {
+      existingParvane.isActive = true;
+      updated = true;
+    }
+    if (!existingParvane.isVerified) {
+      existingParvane.isVerified = true;
+      updated = true;
+    }
+    if (updated) {
+      await userRepo.save(existingParvane);
+      console.log(`✅ Admin status/role updated for: ${targetName} (${targetPhone})`);
+    }
+  }
+
+  // Fallback environment admin seeding
   const email = process.env.ADMIN_EMAIL;
   const password = process.env.ADMIN_PASSWORD;
   if (!email || !password) return;
 
-  const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
   const existing = await userRepo.findOne({ where: { email } });
   if (existing) return;
 

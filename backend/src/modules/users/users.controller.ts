@@ -1,4 +1,4 @@
-import { Controller, Get, Put, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -33,5 +33,21 @@ export class UsersController {
   @ApiOperation({ summary: 'فعال/غیرفعال کردن کاربر (ادمین)' })
   toggleActive(@Param('id') id: string) {
     return this.svc.toggleActive(id);
+  }
+
+  @Put(':id/role')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'تغییر نقش کاربر (ادمین)' })
+  updateRole(@Param('id') id: string, @Body() body: { role: UserRole }) {
+    return this.svc.updateRole(id, body.role);
+  }
+
+  @Delete(':id')
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'حذف کاربر (ادمین)' })
+  deleteUser(@Param('id') id: string) {
+    return this.svc.deleteUser(id);
   }
 }
