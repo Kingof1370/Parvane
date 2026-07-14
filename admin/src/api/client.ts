@@ -67,6 +67,8 @@ export const staffApi = {
 export const clientsApi = {
   getAll: (search?: string) => api.get('/users', { params: { search } }),
   toggleActive: (id: string) => api.put(`/users/${id}/toggle-active`),
+  updateRole: (id: string, role: string) => api.put(`/users/${id}/role`, { role }),
+  deleteUser: (id: string) => api.delete(`/users/${id}`),
 }
 
 export const settingsApi = {
