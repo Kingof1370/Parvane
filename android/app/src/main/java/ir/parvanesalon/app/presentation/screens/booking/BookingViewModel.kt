@@ -92,6 +92,32 @@ class BookingViewModel @Inject constructor(private val api: ApiService) : ViewMo
         if (serviceId != null) loadSlots(serviceId, date)
     }
 
+    fun selectCustomDate(date: LocalDate) {
+        val iso = date.format(DateTimeFormatter.ISO_LOCAL_DATE)
+        val persianDays = listOf("یک‌شنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه")
+        val persianMonths = listOf("فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند")
+        val dayIdx = (date.dayOfWeek.value % 7)
+        val customDateInfo = DateInfo(
+            isoDate = iso,
+            dayName = persianDays[dayIdx],
+            dayNum = toPersianDigits(date.dayOfMonth.toString()),
+            monthName = persianMonths[date.monthValue - 1]
+        )
+
+        val currentDates = _uiState.value.availableDates.toMutableList()
+        if (currentDates.none { it.isoDate == iso }) {
+            currentDates.add(0, customDateInfo)
+        }
+        _uiState.value = _uiState.value.copy(
+            availableDates = currentDates,
+            selectedDate = iso,
+            slots = emptyList(),
+            selectedTime = null
+        )
+        val serviceId = _uiState.value.selectedServiceId
+        if (serviceId != null) loadSlots(serviceId, iso)
+    }
+
     private fun loadSlots(serviceId: String, date: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(slotsLoading = true)

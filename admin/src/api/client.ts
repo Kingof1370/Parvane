@@ -1,6 +1,9 @@
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://parvane-backend.onrender.com/api/v1'
+const BASE_URL = import.meta.env.VITE_API_URL ||
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:3000/api/v1'
+    : 'https://parvane-backend.onrender.com/api/v1')
 
 export const api = axios.create({ baseURL: BASE_URL })
 
@@ -91,6 +94,7 @@ export const loyaltyApi = {
 
 export const chatApi = {
   getAllRooms: () => api.get('/chat/rooms/all'),
+  getStaffRooms: () => api.get('/chat/rooms/staff'),
   getRoomMessages: (roomId: string) => api.get(`/chat/rooms/${roomId}/messages`),
   sendMessage: (roomId: string, content: string, imageUrl?: string) =>
     api.post(`/chat/rooms/${roomId}/messages`, { content, imageUrl }),

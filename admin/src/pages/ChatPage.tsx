@@ -6,6 +6,10 @@ const STATUS_LABEL: Record<string, string> = { open: 'باز', closed: 'بسته
 const STATUS_COLOR: Record<string, string> = { open: 'bg-green-100 text-green-700', closed: 'bg-gray-100 text-gray-500', pending: 'bg-yellow-100 text-yellow-700' }
 
 export default function ChatPage() {
+  const userStr = localStorage.getItem('user')
+  const user = userStr ? JSON.parse(userStr) : null
+  const isStaff = user?.role === 'staff'
+
   const [rooms, setRooms] = useState<any[]>([])
   const [staff, setStaff] = useState<any[]>([])
   const [selected, setSelected] = useState<any>(null)
@@ -19,7 +23,10 @@ export default function ChatPage() {
   const load = async () => {
     setLoading(true)
     try {
-      const [r, s] = await Promise.all([chatApi.getAllRooms(), staffApi.getAll()])
+      const [r, s] = await Promise.all([
+        isStaff ? chatApi.getStaffRooms() : chatApi.getAllRooms(),
+        isStaff ? Promise.resolve({ data: [] }) : staffApi.getAll()
+      ])
       setRooms(r.data)
       setStaff(s.data)
     } catch {} finally { setLoading(false) }
@@ -135,12 +142,14 @@ export default function ChatPage() {
                 <div className="flex items-center gap-2">
                   {selected.status !== 'closed' && (
                     <>
-                      <button
-                        onClick={() => setShowAssign(true)}
-                        className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 flex items-center gap-1"
-                      >
-                        <UserCheck size={13} />اختصاص متخصص
-                      </button>
+                      {!isStaff && (
+                        <button
+                          onClick={() => setShowAssign(true)}
+                          className="text-xs bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg hover:bg-blue-100 flex items-center gap-1"
+                        >
+                          <UserCheck size={13} />اختصاص متخصص
+                        </button>
+                      )}
                       <button
                         onClick={() => handleClose(selected.id)}
                         className="text-xs bg-red-50 text-red-500 px-3 py-1.5 rounded-lg hover:bg-red-100 flex items-center gap-1"

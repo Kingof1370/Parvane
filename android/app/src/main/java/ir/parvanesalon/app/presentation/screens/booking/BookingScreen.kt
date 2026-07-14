@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import java.time.Instant
+import java.time.ZoneId
 
 enum class TimeRangePref(val label: String, val value: String) {
     ANY("هر ساعت", "any"),
@@ -48,6 +51,36 @@ fun BookingScreen(
 
     LaunchedEffect(uiState.success) {
         if (uiState.success) onSuccess()
+    }
+
+    var showDatePicker by remember { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val selectedDateMillis = datePickerState.selectedDateMillis
+                    if (selectedDateMillis != null) {
+                        val localDate = Instant.ofEpochMilli(selectedDateMillis)
+                            .atZone(ZoneId.systemDefault())
+                            .toLocalDate()
+                        viewModel.selectCustomDate(localDate)
+                    }
+                    showDatePicker = false
+                }) {
+                    Text("تأیید", color = Color(0xFFE91E8C), fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("انصراف", color = Color.Gray)
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     LazyColumn(
@@ -142,13 +175,29 @@ fun BookingScreen(
 
         // Date selection
         item {
-            SectionTitle("انتخاب تاریخ")
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SectionTitle("انتخاب تاریخ")
+                TextButton(
+                    onClick = { showDatePicker = true },
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFE91E8C))
+                ) {
+                    Icon(Icons.Default.DateRange, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("انتخاب از تقویم 📅", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
             LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(uiState.availableDates) { dateInfo ->
                     val selected = uiState.selectedDate == dateInfo.isoDate
                     Card(
                         modifier = Modifier
-                            .width(80.dp)
+                            .width(84.dp)
                             .clickable { viewModel.selectDate(dateInfo.isoDate) }
                             .border(
                                 if (selected) 2.dp else 0.dp,
@@ -162,9 +211,9 @@ fun BookingScreen(
                             Modifier.padding(10.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(dateInfo.dayName, fontSize = 12.sp, color = if (selected) Color(0xFFE91E8C) else Color.Gray)
+                            Text(dateInfo.dayName, fontSize = 12.sp, color = if (selected) Color(0xFFE91E8C) else Color.Gray, maxLines = 1)
                             Text(dateInfo.dayNum, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = if (selected) Color(0xFFE91E8C) else Color.Black)
-                            Text(dateInfo.monthName, fontSize = 11.sp, color = Color.Gray)
+                            Text(dateInfo.monthName, fontSize = 11.sp, color = Color.Gray, maxLines = 1)
                         }
                     }
                 }

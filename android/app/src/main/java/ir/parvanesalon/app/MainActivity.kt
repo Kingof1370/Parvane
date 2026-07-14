@@ -9,7 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import dagger.hilt.android.AndroidEntryPoint
-import ir.parvanesalon.app.presentation.navigation.ParvaneNavHost
+import ir.parvanesalon.app.presentation.navigation.AppNavGraph
 import ir.parvanesalon.app.presentation.theme.ParvaneSalonTheme
 
 @AndroidEntryPoint
@@ -23,7 +23,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    ParvaneNavHost()
+                    AppNavGraph()
                 }
             }
         }
