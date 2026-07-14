@@ -3,6 +3,10 @@ import { galleryApi, servicesApi } from '../api/client'
 import { Plus, Pencil, Trash2, Eye, Heart, Image as ImageIcon } from 'lucide-react'
 
 export default function GalleryPage() {
+  const userStr = localStorage.getItem('user')
+  const user = userStr ? JSON.parse(userStr) : null
+  const isStaff = user?.role === 'staff'
+
   const [items, setItems] = useState<any[]>([])
   const [categories, setCategories] = useState<any[]>([])
   const [showForm, setShowForm] = useState(false)
@@ -49,7 +53,18 @@ export default function GalleryPage() {
         isActive: item.isActive !== false,
       })
     } else {
-      setForm({ title: '', description: '', imageUrl: '', thumbnailUrl: '', categoryId: '', tags: '', staffName: '', duration: '', sortOrder: 0, isActive: true })
+      setForm({
+        title: '',
+        description: '',
+        imageUrl: '',
+        thumbnailUrl: '',
+        categoryId: '',
+        tags: '',
+        staffName: isStaff ? user?.fullName || '' : '',
+        duration: '',
+        sortOrder: 0,
+        isActive: true,
+      })
     }
     setShowForm(true)
   }
@@ -109,7 +124,13 @@ export default function GalleryPage() {
               </select>
               <input className={inputCls} placeholder="تگ‌ها (با ویرگول جدا کنید)" value={form.tags} onChange={e => setForm({ ...form, tags: e.target.value })} />
               <div className="grid grid-cols-2 gap-3">
-                <input className={inputCls} placeholder="نام متخصص" value={form.staffName} onChange={e => setForm({ ...form, staffName: e.target.value })} />
+                <input
+                  className={inputCls}
+                  placeholder="نام متخصص"
+                  value={form.staffName}
+                  onChange={e => setForm({ ...form, staffName: e.target.value })}
+                  disabled={isStaff}
+                />
                 <input className={inputCls} placeholder="مدت زمان (مثلاً ۲ ساعت)" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} />
               </div>
               <div className="flex items-center gap-3">

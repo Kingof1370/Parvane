@@ -137,6 +137,7 @@ export class StaffService {
 
   async linkUserAccount(staffId: string, userId: string) {
     await this.staffRepo.update(staffId, { userId });
-    return { message: 'حساب کاربری متخصص لینک شد' };
+    await this.staffRepo.manager.getRepository('users').update(userId, { role: UserRole.STAFF });
+    return { message: 'حساب کاربری متخصص لینک شد و نقش کاربر به متخصص تغییر یافت' };
   }
 }

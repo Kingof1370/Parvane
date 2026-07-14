@@ -1,7 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { StyleGallery, GalleryItemStatus } from './entities/style-gallery.entity';
+import { Staff } from '../staff/entities/staff.entity';
+import { UserRole } from '../auth/entities/user.entity';
 
 @Injectable()
 export class GalleryService {
@@ -19,8 +21,20 @@ export class GalleryService {
     return qb.getMany();
   }
 
-  findAllAdmin() {
+  async findAllAdmin(userId?: string, role?: string) {
+    if (role === UserRole.STAFF) {
+      const staff = await this.repo.manager.getRepository(Staff).findOne({ where: { userId } });
+      if (staff) {
+        return this.repo.find({
+          where: { staffName: staff.fullName, isActive: true },
+          relations: ['category'],
+          order: { sortOrder: 'ASC', createdAt: 'DESC' },
+        });
+      }
+      return [];
+    }
     return this.repo.find({
+      where: { isActive: true },
       relations: ['category'],
       order: { sortOrder: 'ASC', createdAt: 'DESC' },
     });
@@ -33,19 +47,40 @@ export class GalleryService {
     return item;
   }
 
-  create(dto: any) {
+  async create(dto: any, userId?: string, role?: string) {
+    if (role === UserRole.STAFF) {
+      const staff = await this.repo.manager.getRepository(Staff).findOne({ where: { userId } });
+      if (staff) {
+        dto.staffName = staff.fullName;
+      } else {
+        throw new ForbiddenException('پروفایل متخصص برای شما یافت نشد');
+      }
+    }
     const item = this.repo.create(dto);
     return this.repo.save(item);
   }
 
-  async update(id: string, dto: any) {
-    await this.findOne(id);
+  async update(id: string, dto: any, userId?: string, role?: string) {
+    const item = await this.findOne(id);
+    if (role === UserRole.STAFF) {
+      const staff = await this.repo.manager.getRepository(Staff).findOne({ where: { userId } });
+      if (!staff || item.staffName !== staff.fullName) {
+        throw new ForbiddenException('دسترسی مجاز برای ویرایش این آیتم را ندارید');
+      }
+      dto.staffName = staff.fullName;
+    }
     await this.repo.update(id, dto);
     return this.findOne(id);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async remove(id: string, userId?: string, role?: string) {
+    const item = await this.findOne(id);
+    if (role === UserRole.STAFF) {
+      const staff = await this.repo.manager.getRepository(Staff).findOne({ where: { userId } });
+      if (!staff || item.staffName !== staff.fullName) {
+        throw new ForbiddenException('دسترسی مجاز برای حذف این آیتم را ندارید');
+      }
+    }
     await this.repo.update(id, { isActive: false, status: GalleryItemStatus.ARCHIVED });
     return { message: 'آیتم گالری حذف شد' };
   }
