@@ -1,48 +1,56 @@
-import { useEffect, useState } from 'react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts'
+import { useQuery } from '@tanstack/react-query'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { Calendar, Users, TrendingUp, Clock } from 'lucide-react'
 import { dashboardApi } from '../api/client'
 
 interface Summary { todayAppointments: number; pendingAppointments: number; totalClients: number; totalRevenue: number }
 
 export default function DashboardPage() {
-  const [summary, setSummary] = useState<Summary | null>(null)
-  const [chartData, setChartData] = useState<any[]>([])
-  const [popularServices, setPopularServices] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [s, c, p] = await Promise.all([
-          dashboardApi.getSummary(),
-          dashboardApi.getAppointmentsChart(7),
-          dashboardApi.getPopularServices(),
-        ])
-        setSummary(s.data)
-        setChartData(c.data)
-        setPopularServices(p.data)
-      } catch {} finally { setLoading(false) }
+  // Use React Query (useQuery) for fetching Dashboard summary
+  const { data: summaryData, isLoading: isSummaryLoading } = useQuery<Summary>({
+    queryKey: ['dashboardSummary'],
+    queryFn: async () => {
+      const res = await dashboardApi.getSummary();
+      return res.data;
     }
-    load()
-  }, [])
+  })
 
-  const stats = summary ? [
-    { label: 'رزروهای امروز', value: summary.todayAppointments, icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50' },
-    { label: 'در انتظار تأیید', value: summary.pendingAppointments, icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50' },
-    { label: 'کل مشتریان', value: summary.totalClients, icon: Users, color: 'text-green-500', bg: 'bg-green-50' },
-    { label: 'درآمد کل (تومان)', value: Number(summary.totalRevenue || 0).toLocaleString('fa'), icon: TrendingUp, color: 'text-pink-500', bg: 'bg-pink-50' },
+  // Use React Query for fetching appointments chart data
+  const { data: chartData = [], isLoading: isChartLoading } = useQuery<any[]>({
+    queryKey: ['dashboardChart'],
+    queryFn: async () => {
+      const res = await dashboardApi.getAppointmentsChart(7);
+      return res.data;
+    }
+  })
+
+  // Use React Query for fetching popular services
+  const { data: popularServices = [], isLoading: isPopularLoading } = useQuery<any[]>({
+    queryKey: ['popularServices'],
+    queryFn: async () => {
+      const res = await dashboardApi.getPopularServices();
+      return res.data;
+    }
+  })
+
+  const loading = isSummaryLoading || isChartLoading || isPopularLoading
+
+  const stats = summaryData ? [
+    { label: 'رزروهای امروز', value: summaryData.todayAppointments, icon: Calendar, color: 'text-blue-500', bg: 'bg-blue-50' },
+    { label: 'در انتظار تأیید', value: summaryData.pendingAppointments, icon: Clock, color: 'text-orange-500', bg: 'bg-orange-50' },
+    { label: 'کل مشتریان', value: summaryData.totalClients, icon: Users, color: 'text-green-500', bg: 'bg-green-50' },
+    { label: 'درآمد کل (تومان)', value: Number(summaryData.totalRevenue || 0).toLocaleString('fa'), icon: TrendingUp, color: 'text-pink-500', bg: 'bg-pink-50' },
   ] : []
 
   return (
     <div className="space-y-6">
       <div className="gradient-header rounded-2xl p-6 text-white">
         <h1 className="text-2xl font-bold">داشبورد مدیریت ✿</h1>
-        <p className="opacity-80 mt-1">خوش آمدید، پروانه جان</p>
+        <p className="opacity-80 mt-1">خوش آمدید، پروانه جان (بهینه‌سازی شده با React Query)</p>
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">در حال بارگذاری...</div>
+        <div className="text-center py-12 text-gray-400">در حال بارگذاری با React Query...</div>
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
