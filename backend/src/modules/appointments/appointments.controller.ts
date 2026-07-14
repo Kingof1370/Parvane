@@ -7,17 +7,18 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../auth/entities/user.entity';
+import { ThrottlerGuard } from '@nestjs/throttler';
 
 @ApiTags('رزروها')
 @Controller('appointments')
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, ThrottlerGuard)
 @ApiBearerAuth()
 export class AppointmentsController {
   constructor(private readonly svc: AppointmentsService) {}
 
   @Post()
   @ApiOperation({ summary: 'ثبت رزرو جدید (با پشتیبانی پیش‌پرداخت و انتخاب استایل)' })
-  create(@Request() req, @Body() dto: any) {
+  create(@Request() req, @Body() dto: import('./dto/create-appointment.dto').CreateAppointmentDto) {
     return this.svc.create(req.user.id, dto);
   }
 

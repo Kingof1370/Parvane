@@ -1,32 +1,71 @@
+@import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn-font@v33.003/vazirmatn-font-face.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-* { font-family: 'Vazirmatn', sans-serif; }
+* {
+  font-family: 'Vazirmatn', 'Shabnam', system-ui, sans-serif;
+}
 
 body {
-  background-color: #fdf6f9;
+  background-color: #FFF5F5; /* Cream Background */
   direction: rtl;
 }
 
 :root {
-  --primary: #C2185B;
-  --primary-light: #F48FB1;
-  --primary-dark: #880E4F;
-  --secondary: #E91E8C;
-  --gold: #B8860B;
+  --primary: #F8A4B8;        /* Soft Pink */
+  --primary-light: #FFD9E4;
+  --primary-dark: #C76B81;
+  --secondary: #E58097;
+  --gold: #D4AF37;           /* Gold */
   --surface: #ffffff;
-  --background: #fdf6f9;
+  --background: #FFF5F5;
 }
 
+/* Girly & Elegant Header with a Flowery SVG Pattern Background */
 .gradient-header {
-  background: linear-gradient(135deg, #C2185B 0%, #E91E8C 50%, #FF4081 100%);
+  background: linear-gradient(135deg, #F8A4B8 0%, #E58097 50%, #D4AF37 100%);
+  position: relative;
+  overflow: hidden;
 }
 
-.card-hover { transition: all 0.2s; }
-.card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(194,24,91,0.15); }
+/* Add curved flowery SVG pattern overlay to header */
+.gradient-header::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.15;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cpath d='M40 0c5-5 15-5 20 0s5 15 0 20-15 5-20 0-5-15 0-20zm0 80c-5 5-15 5-20 0s-5-15 0-20 15-5 20 0 5 15 0 20zM0 40c-5-5-5-15 0-20s15-5 20 0 5 15 0 20-15 5-20 0zm80 0c5 5 5 15 0 20s-15 5-20 0-5-15 0-20 15-5 20 0z' fill='%23ffffff' fill-rule='evenodd'/%3E%3C/svg%3E");
+  background-size: 40px 40px;
+  pointer-events: none;
+}
 
-.status-pending { background: #FFF3E0; color: #E65100; }
-.status-confirmed { background: #E3F2FD; color: #1565C0; }
-.status-completed { background: #E8F5E9; color: #2E7D32; }
-.status-cancelled { background: #FFEBEE; color: #C62828; }
+/* Rounded, soft-shadowed cards and elements */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 24px !important;
+  background-color: #ffffff;
+  border: 1px solid rgba(248, 164, 184, 0.15);
+}
+.card-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 30px rgba(248, 164, 184, 0.12);
+}
+
+/* Soft animations and micro-interactions on hover and click */
+button, .btn-micro {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+button:hover:not(:disabled), .btn-micro:hover {
+  transform: scale(1.05);
+}
+button:active:not(:disabled), .btn-micro:active {
+  transform: scale(0.95);
+}
+
+/* Status styles with custom Persian rounded badges */
+.status-pending { background: #FFF3E0; color: #E65100; border-radius: 9999px; }
+.status-confirmed { background: #E3F2FD; color: #1565C0; border-radius: 9999px; }
+.status-completed { background: #E8F5E9; color: #2E7D32; border-radius: 9999px; }
+.status-cancelled { background: #FFEBEE; color: #C62828; border-radius: 9999px; }

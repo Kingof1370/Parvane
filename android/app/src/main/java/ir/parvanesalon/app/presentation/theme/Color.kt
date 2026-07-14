@@ -2,32 +2,29 @@ package ir.parvanesalon.app.presentation.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary — Deep Rose/Magenta
-val PinkPrimary = Color(0xFFC2185B)
-val PinkPrimaryDark = Color(0xFFF48FB1)
+// Girly & Elegant Palette
+val PinkPrimary = Color(0xFFF8A4B8)         // Soft Pink
+val PinkPrimaryDark = Color(0xFFC76B81)
 val PinkContainer = Color(0xFFFFD9E4)
 val PinkOnContainer = Color(0xFF3E001F)
 val PinkContainerDark = Color(0xFFFFB3C8)
 
-// Secondary — Dusty Rose
-val RoseSecondary = Color(0xFFE91E8C)
+val RoseSecondary = Color(0xFFF8A4B8)       // Soft Pink
 val RoseSecondaryDark = Color(0xFFFFADD6)
 val RoseContainer = Color(0xFFFFD7EF)
 val RoseOnContainer = Color(0xFF3B002C)
 val RoseContainerDark = Color(0xFFFFB6E3)
 
-// Tertiary — Warm Gold
-val GoldTertiary = Color(0xFFB8860B)
-val GoldTertiaryDark = Color(0xFFE8C56D)
+val GoldTertiary = Color(0xFFD4AF37)        // Gold
+val GoldTertiaryDark = Color(0xFFFFF0B3)
 
-// Background
-val CreamBackground = Color(0xFFFFF8F9)
-val LightPinkSurface = Color(0xFFFCEEF4)
+val CreamBackground = Color(0xFFFFF5F5)     // Cream Background
+val LightPinkSurface = Color(0xFFFFF0F2)
 
 // Gradient colors
-val GradientStart = Color(0xFFC2185B)
-val GradientMid = Color(0xFFE91E8C)
-val GradientEnd = Color(0xFFFF4081)
+val GradientStart = Color(0xFFF8A4B8)
+val GradientMid = Color(0xFFE58097)
+val GradientEnd = Color(0xFFD4AF37) // Gold
 
 // Status colors
 val SuccessGreen = Color(0xFF4CAF50)

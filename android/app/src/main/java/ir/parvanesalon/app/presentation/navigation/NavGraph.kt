@@ -100,8 +100,8 @@ fun AppNavGraph(
         ) {
             composable(Screen.Splash.route) {
                 SplashScreen(
-                    onLoggedIn = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Splash.route) { inclusive = true } } },
-                    onNotLoggedIn = { navController.navigate(Screen.Login.route) { popUpTo(Screen.Splash.route) { inclusive = true } } }
+                    onNavigateToHome = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Splash.route) { inclusive = true } } },
+                    onNavigateToLogin = { navController.navigate(Screen.Login.route) { popUpTo(Screen.Splash.route) { inclusive = true } } }
                 )
             }
 
@@ -120,13 +120,14 @@ fun AppNavGraph(
 
             composable(Screen.Services.route) {
                 ServicesScreen(
-                    onBooking = { staffId, serviceId -> navController.navigate(Screen.Booking.createRoute(staffId, serviceId)) }
+                    onNavigateToBooking = { serviceId, staffId -> navController.navigate(Screen.Booking.createRoute(staffId, serviceId)) },
+                    onBack = { navController.popBackStack() }
                 )
             }
 
             composable(Screen.Appointments.route) {
                 AppointmentsScreen(
-                    onNavigateToBooking = { navController.navigate(Screen.Services.route) }
+                    onBack = { navController.popBackStack() }
                 )
             }
 

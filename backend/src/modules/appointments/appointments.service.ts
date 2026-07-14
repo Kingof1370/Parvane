@@ -7,9 +7,7 @@ import { ServicesService } from '../services/services.service';
 import { LoyaltyTransaction } from '../loyalty/entities/loyalty-transaction.entity';
 import { LoyaltyTransactionType } from '../loyalty/entities/loyalty-transaction.entity';
 import { User } from '../auth/entities/user.entity';
-
-const POINTS_PER_APPOINTMENT = 100;
-const POINTS_PER_REVIEW = 50;
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AppointmentsService {
@@ -19,6 +17,7 @@ export class AppointmentsService {
     @InjectRepository(User) private userRepo: Repository<User>,
     private staffService: StaffService,
     private servicesService: ServicesService,
+    private configService: ConfigService,
   ) {}
 
   async getAvailableSlots(staffId: string, serviceId: string, date: string) {
@@ -153,17 +152,18 @@ export class AppointmentsService {
   }
 
   private async awardLoyaltyPoints(clientId: string, appointmentId: string) {
+    const pointsPerAppointment = this.configService.get<number>('POINTS_PER_APPOINTMENT') || 100;
     const tx = this.loyaltyRepo.create({
       user: { id: clientId },
       appointment: { id: appointmentId },
       type: LoyaltyTransactionType.EARNED_APPOINTMENT,
-      points: POINTS_PER_APPOINTMENT,
+      points: pointsPerAppointment,
       description: `امتیاز بابت رزرو انجام‌شده`,
     });
     await this.loyaltyRepo.save(tx);
-    await this.userRepo.increment({ id: clientId }, 'loyaltyPoints', POINTS_PER_APPOINTMENT);
-    await this.userRepo.increment({ id: clientId }, 'totalLoyaltyEarned', POINTS_PER_APPOINTMENT);
-    await this.apptRepo.update(appointmentId, { loyaltyPointsEarned: POINTS_PER_APPOINTMENT });
+    await this.userRepo.increment({ id: clientId }, 'loyaltyPoints', pointsPerAppointment);
+    await this.userRepo.increment({ id: clientId }, 'totalLoyaltyEarned', pointsPerAppointment);
+    await this.apptRepo.update(appointmentId, { loyaltyPointsEarned: pointsPerAppointment });
   }
 
   async cancelByClient(id: string, clientId: string, reason?: string) {
@@ -206,16 +206,17 @@ export class AppointmentsService {
 
     // امتیاز بابت ارائه نظر
     if (appt.loyaltyPointsEarned >= 0) {
+      const pointsPerReview = this.configService.get<number>('POINTS_PER_REVIEW') || 50;
       const tx = this.loyaltyRepo.create({
         user: { id: clientId },
         appointment: { id },
         type: LoyaltyTransactionType.EARNED_REVIEW,
-        points: POINTS_PER_REVIEW,
+        points: pointsPerReview,
         description: 'امتیاز بابت ثبت نظر',
       });
       await this.loyaltyRepo.save(tx);
-      await this.userRepo.increment({ id: clientId }, 'loyaltyPoints', POINTS_PER_REVIEW);
-      await this.userRepo.increment({ id: clientId }, 'totalLoyaltyEarned', POINTS_PER_REVIEW);
+      await this.userRepo.increment({ id: clientId }, 'loyaltyPoints', pointsPerReview);
+      await this.userRepo.increment({ id: clientId }, 'totalLoyaltyEarned', pointsPerReview);
     }
 
     return { message: 'نظر شما ثبت شد و ۵۰ امتیاز وفاداری دریافت کردید' };

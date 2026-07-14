@@ -19,7 +19,10 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
 
-        buildConfigField("String", "BASE_URL", "\"https://parvane-backend.onrender.com/api/v1/\"")
+        val baseUrl = (project.findProperty("BASE_URL") as? String)
+            ?: System.getenv("BASE_URL")
+            ?: "https://parvane-backend.onrender.com/api/v1/"
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
       }
 
     signingConfigs {
@@ -104,6 +107,7 @@ dependencies {
 
     // DataStore
     implementation(libs.datastore.preferences)
+    implementation(libs.androidx.security.crypto)
 
     // Lottie animations
     implementation(libs.lottie.compose)

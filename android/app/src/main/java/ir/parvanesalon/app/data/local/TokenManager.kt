@@ -1,46 +1,70 @@
 package ir.parvanesalon.app.data.local
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import android.content.SharedPreferences
+import androidx.security.crypto.EncryptedSharedPreferences
+import androidx.security.crypto.MasterKey
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
-
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "parvane_prefs")
 
 @Singleton
 class TokenManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    private val masterKey = MasterKey.Builder(context)
+        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+        .build()
+
+    private val sharedPrefs: SharedPreferences = EncryptedSharedPreferences.create(
+        context,
+        "parvane_secure_prefs",
+        masterKey,
+        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+    )
+
     companion object {
-        private val ACCESS_TOKEN = stringPreferencesKey("access_token")
-        private val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
-        private val USER_ID = stringPreferencesKey("user_id")
-        private val USER_ROLE = stringPreferencesKey("user_role")
+        private const val ACCESS_TOKEN = "access_token"
+        private const val REFRESH_TOKEN = "refresh_token"
+        private const val USER_ID = "user_id"
+        private const val USER_ROLE = "user_role"
     }
 
-    val accessToken: Flow<String?> = context.dataStore.data.map { it[ACCESS_TOKEN] }
-    val refreshToken: Flow<String?> = context.dataStore.data.map { it[REFRESH_TOKEN] }
-    val userId: Flow<String?> = context.dataStore.data.map { it[USER_ID] }
-    val userRole: Flow<String?> = context.dataStore.data.map { it[USER_ROLE] }
-    val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { it[ACCESS_TOKEN] != null }
+    private fun getPrefFlow(key: String): Flow<String?> = callbackFlow {
+        trySend(sharedPrefs.getString(key, null))
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
+            if (changedKey == key) {
+                trySend(sharedPrefs.getString(key, null))
+            }
+        }
+        sharedPrefs.registerOnSharedPreferenceChangeListener(listener)
+        awaitClose {
+            sharedPrefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
+    }
+
+    val accessToken: Flow<String?> = getPrefFlow(ACCESS_TOKEN)
+    val refreshToken: Flow<String?> = getPrefFlow(REFRESH_TOKEN)
+    val userId: Flow<String?> = getPrefFlow(USER_ID)
+    val userRole: Flow<String?> = getPrefFlow(USER_ROLE)
+    val isLoggedIn: Flow<Boolean> = accessToken.map { it != null }
 
     suspend fun saveTokens(accessToken: String, refreshToken: String, userId: String, role: String) {
-        context.dataStore.edit { prefs ->
-            prefs[ACCESS_TOKEN] = accessToken
-            prefs[REFRESH_TOKEN] = refreshToken
-            prefs[USER_ID] = userId
-            prefs[USER_ROLE] = role
+        sharedPrefs.edit().apply {
+            putString(ACCESS_TOKEN, accessToken)
+            putString(REFRESH_TOKEN, refreshToken)
+            putString(USER_ID, userId)
+            putString(USER_ROLE, role)
+            apply()
         }
     }
 
     suspend fun clearAll() {
-        context.dataStore.edit { it.clear() }
+        sharedPrefs.edit().clear().apply()
     }
 }
