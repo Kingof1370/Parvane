@@ -1,49 +1,34 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import * as bcrypt from 'bcryptjs';
+import { DataSource } from 'typeorm';
 import { AppModule } from './app.module';
-import { User, UserRole } from './modules/auth/entities/user.entity';
+import { seedAdmin } from './seeds/seed-admin';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import * as compression from 'compression';
 import helmet from 'helmet';
-
-async function seedAdmin(app: import('@nestjs/common').INestApplicationContext) {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) return;
-
-  const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
-  const existing = await userRepo.findOne({ where: { email } });
-  if (existing) return;
-
-  const hash = await bcrypt.hash(password, 10);
-  const admin = userRepo.create({
-    email,
-    phone: process.env.ADMIN_PHONE || '09000000000',
-    fullName: 'مدیر سالن',
-    password: hash,
-    role: UserRole.ADMIN,
-    isActive: true,
-    isVerified: true,
-  });
-  await userRepo.save(admin);
-  console.log(`✅ Admin user seeded: ${email}`);
-}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  await seedAdmin(app);
+  // Run the admin seeder
+  const dataSource = app.get(DataSource);
+  await seedAdmin(dataSource);
 
   // Security
   app.use(helmet());
   app.use(compression());
 
+  // Global Exception Filter
+  app.useGlobalFilters(new HttpExceptionFilter());
+
   // CORS
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : '*';
+
   app.enableCors({
-    origin: '*',
+    origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });

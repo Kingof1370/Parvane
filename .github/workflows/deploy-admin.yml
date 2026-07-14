@@ -1,0 +1,33 @@
+name: Deploy Admin Panel
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'admin/**'
+      - '.github/workflows/deploy-admin.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+          cache-dependency-path: 'admin/package.json'
+
+      - name: Install Dependencies
+        run: cd admin && yarn install
+
+      - name: Build Admin Panel
+        run: cd admin && yarn build
+
+      - name: Deploy to Hosting (Placeholder/Vercel/Netlify/S3)
+        run: |
+          echo "Deploying to web hosting..."
+          # Example: npx vercel --token ${{ secrets.VERCEL_TOKEN }} --prod

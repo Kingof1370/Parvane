@@ -1,0 +1,33 @@
+name: Deploy Backend
+
+on:
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+          cache-dependency-path: 'backend/package.json'
+
+      - name: Install Dependencies
+        run: cd backend && yarn install
+
+      - name: Build Backend
+        run: cd backend && yarn build
+
+      - name: Deploy to Server (Placeholder/Webhook)
+        run: |
+          echo "Deploying to production server..."
+          # Example: curl -X POST ${{ secrets.RENDER_DEPLOY_WEBHOOK_URL }}

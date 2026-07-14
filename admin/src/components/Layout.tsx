@@ -4,6 +4,7 @@ import {
   LogOut, Menu, UserCheck, Image, Star, MessageCircle,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'داشبورد' },
@@ -19,10 +20,11 @@ const navItems = [
 
 export default function Layout() {
   const navigate = useNavigate()
+  const { user, logout } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = () => {
-    localStorage.removeItem('token')
+    logout()
     navigate('/login')
   }
 
@@ -30,9 +32,10 @@ export default function Layout() {
     <div className="flex flex-col h-full bg-white shadow-xl">
       <div className="gradient-header p-6">
         <div className="text-white text-center">
-          <div className="text-3xl mb-2">✿</div>
+          <div className="text-3xl mb-2 animate-bounce">✿</div>
           <div className="font-bold text-lg">سالن زیبایی پروانه</div>
-          <div className="text-sm opacity-80">پنل مدیریت</div>
+          {user && <div className="text-sm opacity-90 font-medium">خوش آمدید، {user.fullName}</div>}
+          <div className="text-xs opacity-75">پنل مدیریت</div>
         </div>
       </div>
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
