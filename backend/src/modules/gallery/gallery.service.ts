@@ -1,11 +1,16 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { StyleGallery, GalleryItemStatus } from './entities/style-gallery.entity';
+import { UserRole } from '../auth/entities/user.entity';
+import { Staff } from '../staff/entities/staff.entity';
 
 @Injectable()
 export class GalleryService {
-  constructor(@InjectRepository(StyleGallery) private repo: Repository<StyleGallery>) {}
+  constructor(
+    @InjectRepository(StyleGallery) private repo: Repository<StyleGallery>,
+    @InjectRepository(Staff) private staffRepo: Repository<Staff>,
+  ) {}
 
   findAll(categoryId?: string, tag?: string, search?: string) {
     const qb = this.repo.createQueryBuilder('g')
@@ -33,13 +38,25 @@ export class GalleryService {
     return item;
   }
 
-  create(dto: any) {
+  async create(dto: any, requesterId: string, requesterRole: UserRole) {
+    if (requesterRole === UserRole.STAFF) {
+      const staff = await this.staffRepo.findOne({ where: { userId: requesterId } });
+      if (!staff) throw new ForbiddenException('اطلاعات متخصص شما یافت نشد');
+      dto.staffName = staff.fullName;
+    }
     const item = this.repo.create(dto);
     return this.repo.save(item);
   }
 
-  async update(id: string, dto: any) {
-    await this.findOne(id);
+  async update(id: string, dto: any, requesterId: string, requesterRole: UserRole) {
+    const existing = await this.findOne(id);
+    if (requesterRole === UserRole.STAFF) {
+      const staff = await this.staffRepo.findOne({ where: { userId: requesterId } });
+      if (!staff || existing.staffName !== staff.fullName) {
+        throw new ForbiddenException('شما فقط می‌توانید استایل‌های مربوط به خودتان را ویرایش کنید');
+      }
+      dto.staffName = staff.fullName;
+    }
     await this.repo.update(id, dto);
     return this.findOne(id);
   }

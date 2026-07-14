@@ -15,6 +15,7 @@ export default function LoginPage() {
     try {
       const res = await authApi.adminLogin(form.identifier, form.password)
       localStorage.setItem('token', res.data.accessToken)
+      localStorage.setItem('userRole', res.data.user?.role || 'admin')
       navigate('/dashboard')
     } catch {
       setError('مشخصات ورود اشتباه است')

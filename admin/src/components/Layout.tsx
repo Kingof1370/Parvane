@@ -6,23 +6,25 @@ import {
 import { useState } from 'react'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'داشبورد' },
-  { to: '/appointments', icon: Calendar, label: 'رزروها' },
-  { to: '/services', icon: Scissors, label: 'خدمات' },
-  { to: '/staff', icon: UserCheck, label: 'متخصصان' },
-  { to: '/gallery', icon: Image, label: 'گالری استایل' },
-  { to: '/clients', icon: Users, label: 'مشتریان' },
-  { to: '/loyalty', icon: Star, label: 'امتیاز وفاداری' },
-  { to: '/chat', icon: MessageCircle, label: 'مشاوره آنلاین' },
-  { to: '/settings', icon: Settings, label: 'تنظیمات' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'داشبورد', roles: ['admin', 'staff'] },
+  { to: '/appointments', icon: Calendar, label: 'رزروها', roles: ['admin'] },
+  { to: '/services', icon: Scissors, label: 'خدمات', roles: ['admin'] },
+  { to: '/staff', icon: UserCheck, label: 'متخصصان', roles: ['admin'] },
+  { to: '/gallery', icon: Image, label: 'گالری استایل', roles: ['admin', 'staff'] },
+  { to: '/clients', icon: Users, label: 'مشتریان', roles: ['admin'] },
+  { to: '/loyalty', icon: Star, label: 'امتیاز وفاداری', roles: ['admin'] },
+  { to: '/chat', icon: MessageCircle, label: 'مشاوره آنلاین', roles: ['admin', 'staff'] },
+  { to: '/settings', icon: Settings, label: 'تنظیمات', roles: ['admin'] },
 ]
 
 export default function Layout() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const userRole = localStorage.getItem('userRole') || 'admin'
 
   const handleLogout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('userRole')
     navigate('/login')
   }
 
@@ -36,23 +38,25 @@ export default function Layout() {
         </div>
       </div>
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink
-            key={to}
-            to={to}
-            onClick={() => setSidebarOpen(false)}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                isActive
-                  ? 'bg-pink-50 text-pink-700 font-semibold'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`
-            }
-          >
-            <Icon size={20} />
-            <span>{label}</span>
-          </NavLink>
-        ))}
+        {navItems
+          .filter((item) => item.roles.includes(userRole))
+          .map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setSidebarOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  isActive
+                    ? 'bg-pink-50 text-pink-700 font-semibold'
+                    : 'text-gray-600 hover:bg-gray-50'
+                }`
+              }
+            >
+              <Icon size={20} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
       </nav>
       <div className="p-4 border-t space-y-1">
         <div className="text-xs text-gray-400 text-center pb-2">

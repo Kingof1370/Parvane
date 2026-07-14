@@ -43,8 +43,8 @@ export class GalleryController {
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'افزودن آیتم به گالری' })
-  create(@Body() dto: any) {
-    return this.svc.create(dto);
+  create(@Body() dto: any, @Request() req) {
+    return this.svc.create(dto, req.user.id, req.user.role);
   }
 
   @Put(':id')
@@ -52,8 +52,8 @@ export class GalleryController {
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'ویرایش آیتم گالری' })
-  update(@Param('id') id: string, @Body() dto: any) {
-    return this.svc.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: any, @Request() req) {
+    return this.svc.update(id, dto, req.user.id, req.user.role);
   }
 
   @Delete(':id')
