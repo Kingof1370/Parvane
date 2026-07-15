@@ -48,6 +48,7 @@ export class AuthService {
     const user = await this.userRepo.findOne({ where: { email: dto.identifier } })
       || await this.userRepo.findOne({ where: { phone: dto.identifier } });
     if (!user || user.role === UserRole.CLIENT) throw new UnauthorizedException('دسترسی غیرمجاز');
+    if (!user.isActive) throw new UnauthorizedException('حساب کاربری غیرفعال است');
 
     const valid = await bcrypt.compare(dto.password, user.password);
     if (!valid) throw new UnauthorizedException('رمز عبور اشتباه است');
@@ -83,12 +84,23 @@ export class AuthService {
     return { message: 'توکن FCM با موفقیت ثبت شد' };
   }
 
+  async changePassword(userId: string, currentPassword: string, newPassword: string) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('کاربر یافت نشد');
+    if (!user.password) throw new BadRequestException('رمز عبور تنظیم نشده');
+    const valid = await bcrypt.compare(currentPassword, user.password);
+    if (!valid) throw new BadRequestException('رمز عبور فعلی اشتباه است');
+    const hash = await bcrypt.hash(newPassword, 10);
+    await this.userRepo.update(userId, { password: hash });
+    return { message: 'رمز عبور با موفقیت تغییر کرد' };
+  }
+
   async validateUser(userId: string) {
     return this.userRepo.findOne({ where: { id: userId, isActive: true } });
   }
 
   private async generateTokens(user: User) {
-    const payload = { sub: user.id, phone: user.phone, role: user.role };
+    const payload = { sub: user.id, phone: user.phone, role: user.role, fullName: user.fullName };
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1d' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '30d' });
     await this.userRepo.update(user.id, { refreshToken });

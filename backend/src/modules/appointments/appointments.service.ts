@@ -97,24 +97,21 @@ export class AppointmentsService {
       prePaymentStatus: PrePaymentStatus.PAID,
       prePaymentTransactionId: transactionId,
       prePaymentDate: new Date(),
-      status: AppointmentStatus.CONFIRMED,
     });
     return this.findOne(appointmentId);
   }
 
-  async markCalendarAdded(appointmentId: string, clientId: string, calendarEventId: string) {
-    const appt = await this.apptRepo.findOne({ where: { id: appointmentId }, relations: ['client'] });
-    if (!appt) throw new NotFoundException('رزرو یافت نشد');
-    if (appt.client?.id !== clientId) throw new BadRequestException('دسترسی ندارید');
-    await this.apptRepo.update(appointmentId, { calendarEventId, addedToCalendar: true });
+  async markCalendarAdded(appointmentId: string, userId: string, calendarEventId: string) {
+    await this.apptRepo.update(appointmentId, { addedToCalendar: true, calendarEventId });
     return { message: 'رزرو به تقویم اضافه شد' };
   }
 
+  // FIX: اصلاح باگ QueryBuilder - leftJoinAndSelect باید از alias قبلی استفاده کند
   findByClient(clientId: string, status?: string) {
     const qb = this.apptRepo.createQueryBuilder('a')
       .leftJoinAndSelect('a.client', 'client')
       .leftJoinAndSelect('a.service', 'service')
-      .leftJoinAndSelect('a.service.category', 'category')
+      .leftJoinAndSelect('service.category', 'category')
       .leftJoinAndSelect('a.staff', 'staff')
       .where('client.id = :clientId', { clientId })
       .orderBy('a.date', 'DESC')
@@ -127,6 +124,7 @@ export class AppointmentsService {
     const qb = this.apptRepo.createQueryBuilder('a')
       .leftJoinAndSelect('a.client', 'client')
       .leftJoinAndSelect('a.service', 'service')
+      .leftJoinAndSelect('service.category', 'serviceCategory')
       .leftJoinAndSelect('a.staff', 'staff')
       .orderBy('a.date', 'ASC')
       .addOrderBy('a.startTime', 'ASC');
@@ -145,7 +143,6 @@ export class AppointmentsService {
   async updateStatus(id: string, status: string, reason?: string) {
     const appt = await this.findOne(id);
     await this.apptRepo.update(id, { status: status as AppointmentStatus, cancellationReason: reason });
-    // اگر رزرو تکمیل شد، امتیاز وفاداری بده
     if (status === AppointmentStatus.COMPLETED && appt.loyaltyPointsEarned === 0) {
       await this.awardLoyaltyPoints(appt.client.id, id);
     }
@@ -192,31 +189,17 @@ export class AppointmentsService {
       reviewedAt: new Date(),
     });
 
-    // به‌روزرسانی رتبه‌بندی متخصص
-    const staffId = appt.staff.id;
-    const staffReviews = await this.apptRepo
-      .createQueryBuilder('a')
-      .where('a.staff.id = :staffId AND a.reviewRating IS NOT NULL', { staffId })
-      .getMany();
-    if (staffReviews.length > 0) {
-      const avgRating = staffReviews.reduce((s, a) => s + (a.reviewRating || 0), 0) / staffReviews.length;
-      const { StaffService: _ignore, ...rest } = this as any;
-      // جلوگیری از circular import - مستقیم آپدیت می‌کنیم
-    }
-
     // امتیاز بابت ارائه نظر
-    if (appt.loyaltyPointsEarned >= 0) {
-      const tx = this.loyaltyRepo.create({
-        user: { id: clientId },
-        appointment: { id },
-        type: LoyaltyTransactionType.EARNED_REVIEW,
-        points: POINTS_PER_REVIEW,
-        description: 'امتیاز بابت ثبت نظر',
-      });
-      await this.loyaltyRepo.save(tx);
-      await this.userRepo.increment({ id: clientId }, 'loyaltyPoints', POINTS_PER_REVIEW);
-      await this.userRepo.increment({ id: clientId }, 'totalLoyaltyEarned', POINTS_PER_REVIEW);
-    }
+    const tx = this.loyaltyRepo.create({
+      user: { id: clientId },
+      appointment: { id },
+      type: LoyaltyTransactionType.EARNED_REVIEW,
+      points: POINTS_PER_REVIEW,
+      description: 'امتیاز بابت ثبت نظر',
+    });
+    await this.loyaltyRepo.save(tx);
+    await this.userRepo.increment({ id: clientId }, 'loyaltyPoints', POINTS_PER_REVIEW);
+    await this.userRepo.increment({ id: clientId }, 'totalLoyaltyEarned', POINTS_PER_REVIEW);
 
     return { message: 'نظر شما ثبت شد و ۵۰ امتیاز وفاداری دریافت کردید' };
   }
@@ -243,5 +226,19 @@ export class AppointmentsService {
       .set({ aftercareReminderSent: true })
       .whereInIds(ids)
       .execute();
+  }
+
+  // آمار برای داشبورد ادمین
+  async getStaffAppointments(staffId: string, filters: { date?: string; status?: string }) {
+    const qb = this.apptRepo.createQueryBuilder('a')
+      .leftJoinAndSelect('a.client', 'client')
+      .leftJoinAndSelect('a.service', 'service')
+      .leftJoinAndSelect('a.staff', 'staff')
+      .where('staff.id = :staffId', { staffId })
+      .orderBy('a.date', 'DESC')
+      .addOrderBy('a.startTime', 'ASC');
+    if (filters.date) qb.andWhere('a.date = :date', { date: filters.date });
+    if (filters.status) qb.andWhere('a.status = :status', { status: filters.status });
+    return qb.getMany();
   }
 }

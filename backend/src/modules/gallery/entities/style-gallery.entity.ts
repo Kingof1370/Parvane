@@ -51,6 +51,10 @@ export class StyleGallery {
   @Column({ nullable: true })
   staffName: string;
 
+  // اضافه شد: اتصال به userId متخصص برای مدیریت گالری توسط متخصص
+  @Column({ nullable: true })
+  staffUserId: string;
+
   @Column({ nullable: true })
   duration: string;
 

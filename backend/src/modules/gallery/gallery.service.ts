@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import { StyleGallery, GalleryItemStatus } from './entities/style-gallery.entity';
+import { UserRole } from '../auth/entities/user.entity';
 
 @Injectable()
 export class GalleryService {
@@ -26,6 +27,20 @@ export class GalleryService {
     });
   }
 
+  // متخصص می‌تواند آیتم‌های گالری خودش را ببیند (بر اساس staffName یا staffUserId)
+  findByStaff(staffName: string, staffUserId?: string) {
+    const qb = this.repo.createQueryBuilder('g')
+      .leftJoinAndSelect('g.category', 'category')
+      .orderBy('g.sortOrder', 'ASC')
+      .addOrderBy('g.createdAt', 'DESC');
+    if (staffUserId) {
+      qb.where('(g.staffName = :staffName OR g.staffUserId = :staffUserId)', { staffName, staffUserId });
+    } else {
+      qb.where('g.staffName = :staffName', { staffName });
+    }
+    return qb.getMany();
+  }
+
   async findOne(id: string) {
     const item = await this.repo.findOne({ where: { id }, relations: ['category'] });
     if (!item) throw new NotFoundException('آیتم گالری یافت نشد');
@@ -33,19 +48,36 @@ export class GalleryService {
     return item;
   }
 
+  // ادمین - ایجاد آیتم گالری
   create(dto: any) {
     const item = this.repo.create(dto);
     return this.repo.save(item);
   }
 
-  async update(id: string, dto: any) {
-    await this.findOne(id);
-    await this.repo.update(id, dto);
-    return this.findOne(id);
+  // متخصص - ایجاد آیتم گالری برای خودش
+  createByStaff(dto: any, staffName: string, staffUserId: string) {
+    const item = this.repo.create({ ...dto, staffName, staffUserId });
+    return this.repo.save(item);
   }
 
-  async remove(id: string) {
-    await this.findOne(id);
+  async update(id: string, dto: any, requesterId?: string, requesterRole?: UserRole) {
+    const item = await this.repo.findOne({ where: { id } });
+    if (!item) throw new NotFoundException('آیتم گالری یافت نشد');
+    // متخصص فقط آیتم خودش را می‌تواند ویرایش کند
+    if (requesterRole === UserRole.STAFF && item.staffUserId !== requesterId) {
+      throw new ForbiddenException('فقط می‌توانید آیتم‌های خودتان را ویرایش کنید');
+    }
+    await this.repo.update(id, dto);
+    return this.repo.findOne({ where: { id }, relations: ['category'] });
+  }
+
+  async remove(id: string, requesterId?: string, requesterRole?: UserRole) {
+    const item = await this.repo.findOne({ where: { id } });
+    if (!item) throw new NotFoundException('آیتم گالری یافت نشد');
+    // متخصص فقط آیتم خودش را حذف کند
+    if (requesterRole === UserRole.STAFF && item.staffUserId !== requesterId) {
+      throw new ForbiddenException('فقط می‌توانید آیتم‌های خودتان را حذف کنید');
+    }
     await this.repo.update(id, { isActive: false, status: GalleryItemStatus.ARCHIVED });
     return { message: 'آیتم گالری حذف شد' };
   }

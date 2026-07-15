@@ -15,7 +15,7 @@ export class DashboardService {
 
   async getSummary() {
     const today = new Date().toISOString().split('T')[0];
-    const [todayAppts, pendingAppts, totalClients, totalRevenue] = await Promise.all([
+    const [todayAppts, pendingAppts, totalClients, totalRevenue, totalStaff] = await Promise.all([
       this.apptRepo.count({ where: { date: today } }),
       this.apptRepo.count({ where: { status: AppointmentStatus.PENDING } }),
       this.userRepo.count({ where: { role: UserRole.CLIENT } }),
@@ -24,11 +24,13 @@ export class DashboardService {
         .select('SUM(a.paidAmount)', 'total')
         .where('a.status = :status', { status: AppointmentStatus.COMPLETED })
         .getRawOne(),
+      this.userRepo.count({ where: { role: UserRole.STAFF } }),
     ]);
     return {
       todayAppointments: todayAppts,
       pendingAppointments: pendingAppts,
       totalClients,
+      totalStaff,
       totalRevenue: totalRevenue?.total || 0,
     };
   }
@@ -70,5 +72,29 @@ export class DashboardService {
       results.push({ date, count });
     }
     return results;
+  }
+
+  async getClientsStats() {
+    const total = await this.userRepo.count({ where: { role: UserRole.CLIENT } });
+    const active = await this.userRepo.count({ where: { role: UserRole.CLIENT, isActive: true } });
+    const thisMonth = new Date();
+    thisMonth.setDate(1);
+    const newThisMonth = await this.userRepo
+      .createQueryBuilder('u')
+      .where('u.role = :role', { role: UserRole.CLIENT })
+      .andWhere('u.createdAt >= :date', { date: thisMonth })
+      .getCount();
+    return { total, active, inactive: total - active, newThisMonth };
+  }
+
+  async getRecentAppointments(limit: number = 10) {
+    return this.apptRepo
+      .createQueryBuilder('a')
+      .leftJoinAndSelect('a.client', 'client')
+      .leftJoinAndSelect('a.service', 'service')
+      .leftJoinAndSelect('a.staff', 'staff')
+      .orderBy('a.createdAt', 'DESC')
+      .limit(limit)
+      .getMany();
   }
 }

@@ -12,12 +12,23 @@ export class ChatService {
   ) {}
 
   async createRoom(clientId: string, dto: { subject?: string; serviceCategory?: string; staffId?: string }) {
+    // اگر قبلاً اتاق باز داشت، همون رو برگردون
+    const existing = await this.roomRepo.findOne({
+      where: {
+        client: { id: clientId },
+        status: ChatRoomStatus.OPEN,
+        ...(dto.staffId ? { staff: { id: dto.staffId } } : {}),
+      },
+      relations: ['staff'],
+    });
+    if (existing) return existing;
+
     const room = this.roomRepo.create({
       client: { id: clientId },
       staff: dto.staffId ? { id: dto.staffId } : undefined,
       subject: dto.subject,
       serviceCategory: dto.serviceCategory,
-      status: ChatRoomStatus.PENDING,
+      status: dto.staffId ? ChatRoomStatus.OPEN : ChatRoomStatus.PENDING,
     });
     return this.roomRepo.save(room);
   }
@@ -30,15 +41,15 @@ export class ChatService {
     });
   }
 
-  async getStaffRooms(staffId: string) {
-    return this.roomRepo.find({
-      where: [
-        { staff: { id: staffId } },
-        { status: ChatRoomStatus.PENDING, staff: null as any },
-      ],
-      relations: ['client', 'staff'],
-      order: { updatedAt: 'DESC' },
-    });
+  async getStaffRooms(staffUserId: string) {
+    return this.roomRepo
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.client', 'client')
+      .leftJoinAndSelect('r.staff', 'staff')
+      .where('staff.userId = :staffUserId', { staffUserId })
+      .orWhere('r.status = :pending', { pending: ChatRoomStatus.PENDING })
+      .orderBy('r.updatedAt', 'DESC')
+      .getMany();
   }
 
   async getAdminRooms() {
@@ -56,7 +67,7 @@ export class ChatService {
     if (!room) throw new NotFoundException('اتاق گفتگو یافت نشد');
     if (
       userRole !== UserRole.ADMIN &&
-      room.client.id !== userId &&
+      room.client?.id !== userId &&
       room.staff?.userId !== userId
     ) {
       throw new ForbiddenException('دسترسی ندارید');
@@ -65,8 +76,8 @@ export class ChatService {
       where: { room: { id: roomId } },
       order: { createdAt: 'ASC' },
     });
-    // Mark messages as read for this user
-    if (room.client.id === userId) {
+    // خوانده شده نشان بده
+    if (room.client?.id === userId) {
       await this.roomRepo.update(roomId, { unreadClientCount: 0 });
     } else {
       await this.roomRepo.update(roomId, { unreadStaffCount: 0 });
@@ -83,8 +94,15 @@ export class ChatService {
   ) {
     const room = await this.roomRepo.findOne({ where: { id: roomId }, relations: ['client', 'staff'] });
     if (!room) throw new NotFoundException('اتاق گفتگو یافت نشد');
+
+    // اگر اتاق PENDING بود و متخصص پیام داد، OPEN بشه
+    if (room.status === ChatRoomStatus.PENDING && senderType !== ChatMessageSenderType.CLIENT) {
+      await this.roomRepo.update(roomId, { status: ChatRoomStatus.OPEN });
+    }
+
     const msg = this.msgRepo.create({ room: { id: roomId }, senderType, senderId, content, imageUrl });
     await this.msgRepo.save(msg);
+
     if (senderType === ChatMessageSenderType.CLIENT) {
       await this.roomRepo.increment({ id: roomId }, 'unreadStaffCount', 1);
     } else {
@@ -105,5 +123,22 @@ export class ChatService {
   async closeRoom(roomId: string) {
     await this.roomRepo.update(roomId, { status: ChatRoomStatus.CLOSED });
     return { message: 'گفتگو بسته شد' };
+  }
+
+  async getTotalUnread(userId: string, userRole: UserRole) {
+    if (userRole === UserRole.CLIENT) {
+      const rooms = await this.roomRepo.find({
+        where: { client: { id: userId } },
+        select: ['unreadClientCount'],
+      });
+      return { count: rooms.reduce((s, r) => s + r.unreadClientCount, 0) };
+    } else {
+      // متخصص یا ادمین
+      const rooms = await this.roomRepo.find({
+        where: userRole === UserRole.ADMIN ? {} : { staff: { userId } as any },
+        select: ['unreadStaffCount'],
+      });
+      return { count: rooms.reduce((s, r) => s + r.unreadStaffCount, 0) };
+    }
   }
 }

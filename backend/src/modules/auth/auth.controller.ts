@@ -57,4 +57,12 @@ export class AuthController {
   updateFcmToken(@Request() req, @Body() body: { fcmToken: string }) {
     return this.authService.updateFcmToken(req.user.id, body.fcmToken);
   }
+
+  @Patch('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'تغییر رمز عبور' })
+  changePassword(@Request() req, @Body() body: { currentPassword: string; newPassword: string }) {
+    return this.authService.changePassword(req.user.id, body.currentPassword, body.newPassword);
+  }
 }

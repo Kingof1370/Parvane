@@ -16,18 +16,27 @@ import { ChatMessageSenderType } from './entities/chat-room.entity';
 export class ChatController {
   constructor(private readonly svc: ChatService) {}
 
+  // مشتری - ایجاد اتاق مشاوره
   @Post('rooms')
-  @ApiOperation({ summary: 'ایجاد اتاق گفتگو (مشتری)' })
-  createRoom(@Request() req, @Body() dto: { subject?: string; serviceCategory?: string; staffId?: string }) {
-    return this.svc.createRoom(req.user.id, dto);
+  @ApiOperation({ summary: 'ایجاد اتاق مشاوره جدید (مشتری)' })
+  createRoom(
+    @Request() req,
+    @Body() body: { subject?: string; serviceCategory?: string; staffId?: string },
+  ) {
+    return this.svc.createRoom(req.user.id, body);
   }
 
+  // مشتری - اتاق‌های خودم
   @Get('rooms/my')
-  @ApiOperation({ summary: 'اتاق‌های گفتگوی من (مشتری)' })
+  @ApiOperation({ summary: 'اتاق‌های مشاوره من (مشتری)' })
   getMyRooms(@Request() req) {
-    return this.svc.getClientRooms(req.user.id);
+    if (req.user.role === UserRole.CLIENT) {
+      return this.svc.getClientRooms(req.user.id);
+    }
+    return this.svc.getStaffRooms(req.user.id);
   }
 
+  // متخصص - اتاق‌های مرتبط
   @Get('rooms/staff')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
@@ -36,6 +45,7 @@ export class ChatController {
     return this.svc.getStaffRooms(req.user.id);
   }
 
+  // ادمین - همه اتاق‌ها
   @Get('rooms/all')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
@@ -44,12 +54,21 @@ export class ChatController {
     return this.svc.getAdminRooms();
   }
 
+  // تعداد پیام‌های خوانده‌نشده
+  @Get('unread-count')
+  @ApiOperation({ summary: 'تعداد پیام‌های خوانده‌نشده' })
+  getUnreadCount(@Request() req) {
+    return this.svc.getTotalUnread(req.user.id, req.user.role);
+  }
+
+  // پیام‌های یک اتاق
   @Get('rooms/:roomId/messages')
   @ApiOperation({ summary: 'پیام‌های یک اتاق گفتگو' })
   getMessages(@Param('roomId') roomId: string, @Request() req) {
     return this.svc.getRoomMessages(roomId, req.user.id, req.user.role);
   }
 
+  // ارسال پیام
   @Post('rooms/:roomId/messages')
   @ApiOperation({ summary: 'ارسال پیام' })
   sendMessage(
@@ -64,6 +83,7 @@ export class ChatController {
     return this.svc.sendMessage(roomId, req.user.id, senderType, body.content, body.imageUrl);
   }
 
+  // ادمین/متخصص - اختصاص متخصص به اتاق
   @Patch('rooms/:roomId/assign')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
@@ -72,6 +92,7 @@ export class ChatController {
     return this.svc.assignStaff(roomId, body.staffId);
   }
 
+  // بستن اتاق
   @Patch('rooms/:roomId/close')
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.STAFF)
