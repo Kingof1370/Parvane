@@ -26,6 +26,7 @@ export default function StaffPage() {
   const [clients, setClients] = useState<any[]>([])
   const [selectedUserId, setSelectedUserId] = useState('')
   const [permissionsMap, setPermissionsMap] = useState<Record<string, string[]>>({})
+  const [sectionFilter, setSectionFilter] = useState('All')
 
   const load = async () => {
     const res = await staffApi.getAll()
@@ -33,6 +34,13 @@ export default function StaffPage() {
   }
 
   useEffect(() => { load() }, [])
+
+  const uniqueSections = ['All', ...Array.from(new Set(staff.map((s: any) => s.section).filter(Boolean)))]
+
+  const filteredStaff = staff.filter((s: any) => {
+    if (sectionFilter === 'All') return true
+    return s.section && s.section.toLowerCase() === sectionFilter.toLowerCase()
+  })
 
   const openForm = (item?: any) => {
     setEditItem(item || null)
@@ -142,9 +150,26 @@ export default function StaffPage() {
         </div>
       )}
 
+      {/* دکمه‌های فیلتر تخصص */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+        {uniqueSections.map((sec: any) => (
+          <button
+            key={sec}
+            onClick={() => setSectionFilter(sec)}
+            className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${
+              sectionFilter === sec
+                ? 'bg-pink-500 text-white shadow-md'
+                : 'bg-white text-gray-600 hover:bg-gray-100 border'
+            }`}
+          >
+            {sec === 'All' ? 'همه بخش‌ها' : sec}
+          </button>
+        ))}
+      </div>
+
       {/* لیست متخصصان */}
       <div className="space-y-4">
-        {staff.map((s: any) => (
+        {filteredStaff.map((s: any) => (
           <div key={s.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="flex items-center justify-between p-5">
               <div className="flex items-center gap-4">
@@ -248,8 +273,8 @@ export default function StaffPage() {
             )}
           </div>
         ))}
-        {staff.length === 0 && (
-          <div className="text-center py-16 text-gray-400 bg-white rounded-2xl">متخصصی ثبت نشده</div>
+        {filteredStaff.length === 0 && (
+          <div className="text-center py-16 text-gray-400 bg-white rounded-2xl">متخصصی در این بخش ثبت نشده است</div>
         )}
       </div>
 

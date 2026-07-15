@@ -10,26 +10,42 @@ import * as compression from 'compression';
 import helmet from 'helmet';
 
 async function seedAdmin(app: import('@nestjs/common').INestApplicationContext) {
-  const email = process.env.ADMIN_EMAIL;
-  const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) return;
+  const email = process.env.ADMIN_EMAIL || 'admin@parvane-salon.ir';
+  const password = process.env.ADMIN_PASSWORD || 'Ali2560199068al@';
+  const phone = process.env.ADMIN_PHONE || '09019667604';
 
   const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
-  const existing = await userRepo.findOne({ where: { email } });
-  if (existing) return;
+  let existing = await userRepo.findOne({
+    where: [
+      { email },
+      { phone },
+    ],
+  });
+
+  if (existing) {
+    // Ensure the role is updated to ADMIN and is active
+    if (existing.role !== UserRole.ADMIN || !existing.isActive) {
+      existing.role = UserRole.ADMIN;
+      existing.isActive = true;
+      existing.isVerified = true;
+      await userRepo.save(existing);
+      console.log(`✅ Admin user role/activation updated for: ${existing.email || existing.phone}`);
+    }
+    return;
+  }
 
   const hash = await bcrypt.hash(password, 10);
   const admin = userRepo.create({
     email,
-    phone: process.env.ADMIN_PHONE || '09000000000',
-    fullName: 'مدیر سالن',
+    phone,
+    fullName: 'پروانه اکبرپور',
     password: hash,
     role: UserRole.ADMIN,
     isActive: true,
     isVerified: true,
   });
   await userRepo.save(admin);
-  console.log(`✅ Admin user seeded: ${email}`);
+  console.log(`✅ Admin user seeded: ${email} (${phone})`);
 }
 
 async function bootstrap() {

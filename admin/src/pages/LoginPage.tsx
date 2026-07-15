@@ -15,7 +15,12 @@ export default function LoginPage() {
     try {
       const res = await authApi.adminLogin(form.identifier, form.password)
       localStorage.setItem('token', res.data.accessToken)
-      navigate('/dashboard')
+      localStorage.setItem('user', JSON.stringify(res.data.user))
+      if (res.data.user?.role === 'staff') {
+        navigate('/gallery')
+      } else {
+        navigate('/dashboard')
+      }
     } catch {
       setError('مشخصات ورود اشتباه است')
     } finally {
