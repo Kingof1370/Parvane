@@ -24,9 +24,11 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     onNavigateToLoyalty: () -> Unit,
     onNavigateToNotifications: () -> Unit,
+    onNavigateToAdmin: () -> Unit = {},
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val isAdminOrStaff = uiState.user?.role == "admin" || uiState.user?.role == "staff"
 
     LazyColumn(
         modifier = Modifier
@@ -61,8 +63,23 @@ fun ProfileScreen(
                     Spacer(Modifier.height(12.dp))
                     Text(uiState.user?.fullName ?: "...", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     Text(uiState.user?.phone ?: "", color = Color.White.copy(0.8f), fontSize = 14.sp)
+
+                    // Role badge
+                    if (isAdminOrStaff) {
+                        Spacer(Modifier.height(8.dp))
+                        Surface(color = Color.White.copy(0.2f), shape = RoundedCornerShape(10.dp)) {
+                            Text(
+                                if (uiState.user?.role == "admin") "👑 مدیر سالن" else "💼 متخصص",
+                                color = Color.White,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                            )
+                        }
+                    }
+
                     if ((uiState.user?.loyaltyPoints ?: 0) > 0) {
-                        Spacer(Modifier.height(12.dp))
+                        Spacer(Modifier.height(10.dp))
                         Surface(color = Color.White.copy(0.2f), shape = RoundedCornerShape(12.dp)) {
                             Row(
                                 Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -83,31 +100,71 @@ fun ProfileScreen(
             }
         }
 
+        // ── Admin/Staff Panel Button ──────────────────────
+        if (isAdminOrStaff) {
+            item {
+                Spacer(Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clickable { onNavigateToAdmin() },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFE91E8C)
+                    ),
+                    elevation = CardDefaults.cardElevation(4.dp)
+                ) {
+                    Row(
+                        Modifier.padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                    ) {
+                        Text("⚙️", fontSize = 28.sp)
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                if (uiState.user?.role == "admin") "پنل مدیریت سالن" else "پنل متخصص",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                if (uiState.user?.role == "admin")
+                                    "مدیریت رزروها، کاربران، گالری و اعلان‌ها"
+                                else
+                                    "مشاهده رزروها و مدیریت گالری",
+                                color = Color.White.copy(0.85f),
+                                fontSize = 12.sp
+                            )
+                        }
+                        Text("›", fontSize = 24.sp, color = Color.White)
+                    }
+                }
+            }
+        }
+
+        // ── Regular menu items ────────────────────────────
         item {
             Spacer(Modifier.height(16.dp))
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-
                 ProfileMenuItem(
                     icon = "⭐",
                     title = "امتیاز وفاداری",
                     subtitle = "مشاهده امتیازات و تاریخچه",
                     onClick = onNavigateToLoyalty
                 )
-
                 ProfileMenuItem(
                     icon = "🔔",
                     title = "اعلان‌ها",
                     subtitle = "مشاهده اعلان‌ها و یادآوری‌ها",
                     onClick = onNavigateToNotifications
                 )
-
                 ProfileMenuItem(
                     icon = "📅",
                     title = "رزروهای من",
                     subtitle = "تاریخچه نوبت‌ها",
                     onClick = {}
                 )
-
                 ProfileMenuItem(
                     icon = "👤",
                     title = "ویرایش پروفایل",
@@ -119,7 +176,6 @@ fun ProfileScreen(
 
         item {
             Spacer(Modifier.height(16.dp))
-            // About
             Card(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(16.dp),

@@ -6,7 +6,7 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // Auth
+    // ──── Auth ────
     @POST("auth/register")
     suspend fun register(@Body body: RegisterRequest): Response<AuthResponse>
 
@@ -22,7 +22,10 @@ interface ApiService {
     @PATCH("auth/fcm-token")
     suspend fun updateFcmToken(@Body body: Map<String, String>): Response<MessageResponse>
 
-    // Services
+    @PATCH("auth/change-password")
+    suspend fun changePassword(@Body body: Map<String, String>): Response<MessageResponse>
+
+    // ──── Services ────
     @GET("services")
     suspend fun getServices(@Query("categoryId") categoryId: String? = null): Response<List<ServiceDto>>
 
@@ -32,7 +35,7 @@ interface ApiService {
     @GET("services/{id}")
     suspend fun getService(@Path("id") id: String): Response<ServiceDto>
 
-    // Staff
+    // ──── Staff ────
     @GET("staff")
     suspend fun getStaff(): Response<List<StaffDto>>
 
@@ -48,7 +51,7 @@ interface ApiService {
     @GET("staff/{id}/portfolio")
     suspend fun getStaffPortfolio(@Path("id") staffId: String): Response<List<PortfolioItemDto>>
 
-    // Appointments
+    // ──── Appointments ────
     @GET("appointments/available-slots")
     suspend fun getAvailableSlots(
         @Query("staffId") staffId: String,
@@ -89,7 +92,7 @@ interface ApiService {
         @Body body: CalendarAddedRequest
     ): Response<MessageResponse>
 
-    // Notifications
+    // ──── Notifications ────
     @GET("notifications")
     suspend fun getNotifications(): Response<List<NotificationDto>>
 
@@ -102,7 +105,7 @@ interface ApiService {
     @PATCH("notifications/read-all")
     suspend fun markAllRead(): Response<MessageResponse>
 
-    // Gallery
+    // ──── Gallery ────
     @GET("gallery")
     suspend fun getGallery(
         @Query("categoryId") categoryId: String? = null,
@@ -116,14 +119,14 @@ interface ApiService {
     @POST("gallery/{id}/like")
     suspend fun likeGalleryItem(@Path("id") id: String): Response<MessageResponse>
 
-    // Loyalty
+    // ──── Loyalty ────
     @GET("loyalty/my")
     suspend fun getMyLoyalty(): Response<LoyaltyPointsResponse>
 
     @POST("loyalty/redeem")
     suspend fun redeemPoints(@Body body: Map<String, Any>): Response<MessageResponse>
 
-    // Chat
+    // ──── Chat ────
     @GET("chat/rooms/my")
     suspend fun getMyChatRooms(): Response<List<ChatRoomDto>>
 
@@ -139,7 +142,85 @@ interface ApiService {
         @Body body: SendMessageRequest
     ): Response<ChatMessageDto>
 
-    // Dashboard (staff/admin)
+    // ──── Dashboard (client) ────
     @GET("dashboard/summary")
     suspend fun getDashboardSummary(): Response<DashboardSummary>
+
+    // ════════════════════════════════
+    //       ADMIN ENDPOINTS
+    // ════════════════════════════════
+
+    // ──── Admin Dashboard ────
+    @GET("dashboard/summary")
+    suspend fun getAdminDashboardSummary(): Response<AdminDashboardSummary>
+
+    @GET("dashboard/recent-appointments")
+    suspend fun getRecentAppointments(@Query("limit") limit: Int = 8): Response<List<AdminAppointmentDto>>
+
+    @GET("dashboard/clients-stats")
+    suspend fun getClientsStats(): Response<ClientsStatsDto>
+
+    // ──── Admin Appointments ────
+    @GET("appointments")
+    suspend fun getAdminAppointments(
+        @Query("date") date: String? = null,
+        @Query("staffId") staffId: String? = null,
+        @Query("status") status: String? = null,
+    ): Response<List<AdminAppointmentDto>>
+
+    @PATCH("appointments/{id}/status")
+    suspend fun updateAppointmentStatus(
+        @Path("id") id: String,
+        @Body body: UpdateStatusRequest
+    ): Response<AdminAppointmentDto>
+
+    // ──── Admin Users ────
+    @GET("users/clients")
+    suspend fun getAdminClients(@Query("search") search: String? = null): Response<List<AdminUserDto>>
+
+    @GET("users/staff")
+    suspend fun getStaffUsers(): Response<List<AdminUserDto>>
+
+    @POST("users/staff")
+    suspend fun createStaffUser(@Body body: CreateStaffRequest): Response<AdminUserDto>
+
+    @PATCH("users/{id}/role")
+    suspend fun changeUserRole(@Path("id") id: String, @Body body: ChangeRoleRequest): Response<AdminUserDto>
+
+    @PUT("users/{id}/toggle-active")
+    suspend fun toggleUserActive(@Path("id") id: String): Response<MessageResponse>
+
+    @PATCH("users/{id}/reset-password")
+    suspend fun resetUserPassword(@Path("id") id: String, @Body body: ResetPasswordRequest): Response<MessageResponse>
+
+    // ──── Admin Gallery ────
+    @GET("gallery/admin")
+    suspend fun getAdminGallery(): Response<List<AdminGalleryItemDto>>
+
+    @POST("gallery")
+    suspend fun createGalleryItem(@Body body: CreateGalleryItemRequest): Response<AdminGalleryItemDto>
+
+    @DELETE("gallery/{id}")
+    suspend fun deleteGalleryItem(@Path("id") id: String): Response<MessageResponse>
+
+    // ──── Admin Notifications ────
+    @POST("notifications/broadcast")
+    suspend fun broadcastNotification(@Body body: BroadcastNotificationRequest): Response<BroadcastResultDto>
+
+    // ──── Admin Settings ────
+    @GET("settings")
+    suspend fun getSettings(): Response<Map<String, String>>
+
+    @PUT("settings")
+    suspend fun updateSettings(@Body body: Map<String, String>): Response<Map<String, String>>
+
+    // ──── Admin Chat ────
+    @GET("chat/rooms/all")
+    suspend fun getAdminChatRooms(): Response<List<AdminChatRoomDto>>
+
+    @PATCH("chat/rooms/{roomId}/assign")
+    suspend fun assignStaffToRoom(
+        @Path("roomId") roomId: String,
+        @Body body: AssignStaffRequest
+    ): Response<MessageResponse>
 }

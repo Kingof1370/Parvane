@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import ir.parvanesalon.app.presentation.screens.admin.AdminPanelScreen
 import ir.parvanesalon.app.presentation.screens.appointments.AppointmentsScreen
 import ir.parvanesalon.app.presentation.screens.booking.BookingScreen
 import ir.parvanesalon.app.presentation.screens.chat.ChatScreen
@@ -37,13 +38,17 @@ sealed class Screen(val route: String, val label: String? = null, val icon: Imag
     object Gallery : Screen("gallery")
     object Loyalty : Screen("loyalty")
     object Notifications : Screen("notifications")
+    object AdminPanel : Screen("admin")
     object StaffDetail : Screen("staff/{staffId}") {
         fun createRoute(staffId: String) = "staff/$staffId"
     }
     object Booking : Screen("booking/{staffId}?serviceId={serviceId}&styleUrl={styleUrl}&styleId={styleId}") {
-        fun createRoute(staffId: String, serviceId: String? = null, styleUrl: String? = null, styleId: String? = null): String {
-            return "booking/$staffId?serviceId=${serviceId ?: ""}&styleUrl=${styleUrl ?: ""}&styleId=${styleId ?: ""}"
-        }
+        fun createRoute(
+            staffId: String,
+            serviceId: String? = null,
+            styleUrl: String? = null,
+            styleId: String? = null
+        ): String = "booking/$staffId?serviceId=${serviceId ?: ""}&styleUrl=${styleUrl ?: ""}&styleId=${styleId ?: ""}"
     }
 }
 
@@ -63,7 +68,6 @@ fun AppNavGraph(
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
-
     val showBottomBar = bottomNavItems.any { currentRoute == it.route }
 
     Scaffold(
@@ -80,34 +84,40 @@ fun AppNavGraph(
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(screen.icon!!, contentDescription = screen.label) },
-                            label = { Text(screen.label!!) },
+                            icon = { Icon(screen.icon ?: Icons.Default.Home, screen.label) },
+                            label = { Text(screen.label ?: "") },
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = Color(0xFFE91E8C),
                                 selectedTextColor = Color(0xFFE91E8C),
-                                indicatorColor = Color(0xFFFCF0F8),
+                                indicatorColor = Color(0xFFFCE4EC),
                             )
                         )
                     }
                 }
             }
         }
-    ) { paddingValues ->
+    ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.padding(innerPadding)
         ) {
             composable(Screen.Splash.route) {
                 SplashScreen(
-                    onNavigateToHome = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Splash.route) { inclusive = true } } },
-                    onNavigateToLogin = { navController.navigate(Screen.Login.route) { popUpTo(Screen.Splash.route) { inclusive = true } } }
+                    onNavigateToLogin = {
+                        navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
+                    },
+                    onNavigateToHome = {
+                        navController.navigate(Screen.Home.route) { popUpTo(0) { inclusive = true } }
+                    }
                 )
             }
 
             composable(Screen.Login.route) {
                 LoginScreen(
-                    onSuccess = { navController.navigate(Screen.Home.route) { popUpTo(Screen.Login.route) { inclusive = true } } }
+                    onSuccess = {
+                        navController.navigate(Screen.Home.route) { popUpTo(0) { inclusive = true } }
+                    }
                 )
             }
 
@@ -120,25 +130,31 @@ fun AppNavGraph(
 
             composable(Screen.Services.route) {
                 ServicesScreen(
-                    onNavigateToBooking = { staffId, serviceId -> navController.navigate(Screen.Booking.createRoute(staffId, serviceId)) },
+                    onNavigateToBooking = { serviceId, staffId ->
+                        navController.navigate(Screen.Booking.createRoute(staffId, serviceId))
+                    },
                     onBack = { navController.popBackStack() }
                 )
             }
 
             composable(Screen.Appointments.route) {
-                AppointmentsScreen(
-                    onBack = { navController.popBackStack() }
-                )
+                AppointmentsScreen(onBack = { navController.popBackStack() })
             }
 
             composable(Screen.Chat.route) { ChatScreen() }
 
             composable(Screen.Gallery.route) {
                 GalleryScreen(
-                    onSelectStyle = { item ->
-                        navController.previousBackStackEntry?.savedStateHandle?.set("selectedStyleUrl", item.imageUrl)
-                        navController.previousBackStackEntry?.savedStateHandle?.set("selectedStyleId", item.id)
-                        navController.popBackStack()
+                    onSelectStyle = { style ->
+                        // گالری — style انتخاب شده به صفحه booking می‌رود
+                        // staffId از اولین متخصص پیش‌فرض (یا navigator)
+                        navController.navigate(
+                            Screen.Booking.createRoute(
+                                staffId = "default",
+                                styleUrl = style.imageUrl,
+                                styleId = style.id
+                            )
+                        )
                     }
                 )
             }
@@ -146,6 +162,10 @@ fun AppNavGraph(
             composable(Screen.Loyalty.route) { LoyaltyScreen() }
 
             composable(Screen.Notifications.route) { NotificationsScreen() }
+
+            composable(Screen.AdminPanel.route) {
+                AdminPanelScreen(onBack = { navController.popBackStack() })
+            }
 
             composable(Screen.StaffDetail.route) { backStackEntry ->
                 val staffId = backStackEntry.arguments?.getString("staffId") ?: return@composable
@@ -178,18 +198,16 @@ fun AppNavGraph(
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     onLogout = {
-                        navController.navigate(Screen.Login.route) {
-                            popUpTo(0) { inclusive = true }
-                        }
+                        navController.navigate(Screen.Login.route) { popUpTo(0) { inclusive = true } }
                     },
                     onNavigateToLoyalty = { navController.navigate(Screen.Loyalty.route) },
-                    onNavigateToNotifications = { navController.navigate(Screen.Notifications.route) }
+                    onNavigateToNotifications = { navController.navigate(Screen.Notifications.route) },
+                    onNavigateToAdmin = { navController.navigate(Screen.AdminPanel.route) }
                 )
             }
         }
     }
 }
 
-// Alias for backward compatibility with MainActivity
 @Composable
 fun ParvaneNavHost() = AppNavGraph()
