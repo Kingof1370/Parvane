@@ -4,11 +4,14 @@ import { Repository } from 'typeorm';
 import { ChatRoom, ChatMessage, ChatRoomStatus, ChatMessageSenderType } from './entities/chat-room.entity';
 import { UserRole } from '../auth/entities/user.entity';
 
+import { Staff } from '../staff/entities/staff.entity';
+
 @Injectable()
 export class ChatService {
   constructor(
     @InjectRepository(ChatRoom) private roomRepo: Repository<ChatRoom>,
     @InjectRepository(ChatMessage) private msgRepo: Repository<ChatMessage>,
+    @InjectRepository(Staff) private staffRepo: Repository<Staff>,
   ) {}
 
   async createRoom(clientId: string, dto: { subject?: string; serviceCategory?: string; staffId?: string }) {
@@ -30,15 +33,29 @@ export class ChatService {
     });
   }
 
-  async getStaffRooms(staffId: string) {
-    return this.roomRepo.find({
-      where: [
-        { staff: { id: staffId } },
-        { status: ChatRoomStatus.PENDING, staff: null as any },
-      ],
-      relations: ['client', 'staff'],
-      order: { updatedAt: 'DESC' },
-    });
+  async getStaffRooms(userId: string) {
+    const staff = await this.staffRepo.findOne({ where: { userId } });
+    if (!staff) return [];
+
+    const qb = this.roomRepo.createQueryBuilder('room')
+      .leftJoinAndSelect('room.client', 'client')
+      .leftJoinAndSelect('room.staff', 'staff')
+      .orderBy('room.updatedAt', 'DESC');
+
+    qb.where('staff.id = :staffId', { staffId: staff.id });
+
+    if (staff.section) {
+      qb.orWhere('(room.status = :status AND room.staffId IS NULL AND (room.serviceCategory ILIKE :section OR room.subject ILIKE :section))', {
+        status: ChatRoomStatus.PENDING,
+        section: `%${staff.section}%`,
+      });
+    } else {
+      qb.orWhere('(room.status = :status AND room.staffId IS NULL)', {
+        status: ChatRoomStatus.PENDING,
+      });
+    }
+
+    return qb.getMany();
   }
 
   async getAdminRooms() {
@@ -54,11 +71,20 @@ export class ChatService {
       relations: ['client', 'staff'],
     });
     if (!room) throw new NotFoundException('اتاق گفتگو یافت نشد');
-    if (
-      userRole !== UserRole.ADMIN &&
-      room.client.id !== userId &&
-      room.staff?.userId !== userId
-    ) {
+
+    if (userRole === UserRole.STAFF) {
+      const staff = await this.staffRepo.findOne({ where: { userId } });
+      if (!staff) throw new ForbiddenException('متخصص یافت نشد');
+
+      const isAssignedToMe = room.staff?.id === staff.id;
+      const isPendingAndInMySection = !room.staff && staff.section &&
+        ((room.serviceCategory && room.serviceCategory.toLowerCase().includes(staff.section.toLowerCase())) ||
+         (room.subject && room.subject.toLowerCase().includes(staff.section.toLowerCase())));
+
+      if (!isAssignedToMe && !isPendingAndInMySection) {
+        throw new ForbiddenException('دسترسی ندارید');
+      }
+    } else if (userRole !== UserRole.ADMIN && room.client.id !== userId) {
       throw new ForbiddenException('دسترسی ندارید');
     }
     const messages = await this.msgRepo.find({

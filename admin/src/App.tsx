@@ -11,26 +11,43 @@ import LoyaltyPage from './pages/LoyaltyPage'
 import ChatPage from './pages/ChatPage'
 import Layout from './components/Layout'
 
-function PrivateRoute({ children }: { children: React.ReactNode }) {
+import ProfilePage from './pages/ProfilePage'
+
+function PrivateRoute({ children, adminOnly = false }: { children: React.ReactNode; adminOnly?: boolean }) {
   const token = localStorage.getItem('token')
-  return token ? <>{children}</> : <Navigate to="/login" replace />
+  if (!token) return <Navigate to="/login" replace />
+
+  if (adminOnly) {
+    const userStr = localStorage.getItem('user')
+    const user = userStr ? JSON.parse(userStr) : null
+    if (user?.role === 'staff') {
+      return <Navigate to="/gallery" replace />
+    }
+  }
+
+  return <>{children}</>
 }
 
 export default function App() {
+  const userStr = localStorage.getItem('user')
+  const user = userStr ? JSON.parse(userStr) : null
+  const isStaff = user?.role === 'staff'
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="appointments" element={<AppointmentsPage />} />
-        <Route path="services" element={<ServicesPage />} />
-        <Route path="staff" element={<StaffPage />} />
-        <Route path="clients" element={<ClientsPage />} />
+        <Route index element={<Navigate to={isStaff ? "/gallery" : "/dashboard"} replace />} />
+        <Route path="dashboard" element={<PrivateRoute adminOnly><DashboardPage /></PrivateRoute>} />
+        <Route path="appointments" element={<PrivateRoute adminOnly><AppointmentsPage /></PrivateRoute>} />
+        <Route path="services" element={<PrivateRoute adminOnly><ServicesPage /></PrivateRoute>} />
+        <Route path="staff" element={<PrivateRoute adminOnly><StaffPage /></PrivateRoute>} />
+        <Route path="clients" element={<PrivateRoute adminOnly><ClientsPage /></PrivateRoute>} />
         <Route path="gallery" element={<GalleryPage />} />
-        <Route path="loyalty" element={<LoyaltyPage />} />
+        <Route path="loyalty" element={<PrivateRoute adminOnly><LoyaltyPage /></PrivateRoute>} />
         <Route path="chat" element={<ChatPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<PrivateRoute adminOnly><SettingsPage /></PrivateRoute>} />
       </Route>
     </Routes>
   )

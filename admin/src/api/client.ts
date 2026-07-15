@@ -1,6 +1,21 @@
 import axios from 'axios'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://parvane-backend.onrender.com/api/v1'
+const getBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  const { hostname, protocol } = window.location
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return 'http://localhost:3000/api/v1'
+  }
+  // Try to connect to backend on the same replit domain if any, or default to render
+  if (hostname.includes('.repl.co') || hostname.includes('.replit.app')) {
+    return `${protocol}//${hostname.replace('admin.', 'backend.').replace('-admin.', '-backend.')}/api/v1`
+  }
+  return 'https://parvane-backend.onrender.com/api/v1'
+}
+
+const BASE_URL = getBaseUrl()
 
 export const api = axios.create({ baseURL: BASE_URL })
 
@@ -24,6 +39,8 @@ api.interceptors.response.use(
 export const authApi = {
   adminLogin: (identifier: string, password: string) =>
     api.post('/auth/admin/login', { identifier, password }),
+  getProfile: () => api.get('/auth/profile'),
+  updateProfile: (data: any) => api.put('/users/profile', data),
 }
 
 export const dashboardApi = {
@@ -37,6 +54,10 @@ export const appointmentsApi = {
   getAll: (params?: any) => api.get('/appointments', { params }),
   updateStatus: (id: string, status: string, reason?: string) =>
     api.patch(`/appointments/${id}/status`, { status, reason }),
+  getSlots: (staffId: string, serviceId: string, date: string) =>
+    api.get('/appointments/available-slots', { params: { staffId, serviceId, date } }),
+  create: (data: any) =>
+    api.post('/appointments', data),
 }
 
 export const servicesApi = {

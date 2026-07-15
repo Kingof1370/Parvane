@@ -26,21 +26,28 @@ import { HealthController } from './health.controller';
     ScheduleModule.forRoot(),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get('DATABASE_HOST', 'localhost'),
-        port: config.get<number>('DATABASE_PORT', 5432),
-        username: config.get('DATABASE_USER', 'postgres'),
-        password: config.get('DATABASE_PASSWORD', 'password'),
-        database: config.get('DATABASE_NAME', 'parvane_salon'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get('DATABASE_SYNCHRONIZE', 'true') === 'true',
-        logging: config.get('NODE_ENV') === 'development',
-        ssl:
-          config.get('DATABASE_SSL', 'true') === 'true'
-            ? { rejectUnauthorized: false }
-            : false,
-      }),
+      useFactory: (config: ConfigService) => {
+        const dbUrl = config.get<string>('DATABASE_URL');
+        return {
+          type: 'postgres',
+          ...(dbUrl
+            ? { url: dbUrl }
+            : {
+                host: config.get<string>('DATABASE_HOST', 'localhost'),
+                port: Number(config.get<number>('DATABASE_PORT', 5432)),
+                username: config.get<string>('DATABASE_USER', 'postgres'),
+                password: config.get<string>('DATABASE_PASSWORD', 'password'),
+                database: config.get<string>('DATABASE_NAME', 'parvane_salon'),
+              }),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: config.get<string>('DATABASE_SYNCHRONIZE', 'true') === 'true',
+          logging: config.get<string>('NODE_ENV') === 'development',
+          ssl:
+            config.get<string>('DATABASE_SSL', 'true') === 'true' || !!dbUrl
+              ? { rejectUnauthorized: false }
+              : false,
+        } as any;
+      },
       inject: [ConfigService],
     }),
     AuthModule,
