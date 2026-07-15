@@ -8,6 +8,9 @@ import { AppModule } from './app.module';
 import { User, UserRole } from './modules/auth/entities/user.entity';
 import * as compression from 'compression';
 import helmet from 'helmet';
+import { join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import * as express from 'express';
 
 async function seedAdmin(app: import('@nestjs/common').INestApplicationContext) {
   const email = process.env.ADMIN_EMAIL;
@@ -33,13 +36,25 @@ async function seedAdmin(app: import('@nestjs/common').INestApplicationContext) 
 }
 
 async function bootstrap() {
+  // اطمینان از وجود پوشه uploads
+  const uploadDir = join(process.cwd(), 'uploads');
+  if (!existsSync(uploadDir)) {
+    mkdirSync(uploadDir, { recursive: true });
+    console.log('📁 uploads directory created');
+  }
+
   const app = await NestFactory.create(AppModule);
 
   await seedAdmin(app);
 
   // Security
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  }));
   app.use(compression());
+
+  // سرو فایل‌های استاتیک (تصاویر آپلودشده)
+  app.use('/uploads', express.static(uploadDir));
 
   // CORS
   app.enableCors({
