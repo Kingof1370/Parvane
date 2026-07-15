@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification, NotificationType } from './entities/notification.entity';
-import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
