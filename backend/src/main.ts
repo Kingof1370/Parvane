@@ -12,27 +12,61 @@ import { join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 import * as express from 'express';
 
+/**
+ * ایجاد یا بروزرسانی کاربر ادمین هنگام راه‌اندازی سرور.
+ * متغیرهای محیطی مورد نیاز در Render:
+ *   ADMIN_PHONE    – شماره موبایل ادمین
+ *   ADMIN_PASSWORD – رمز عبور ادمین
+ *   ADMIN_NAME     – نام کامل ادمین (اختیاری، پیش‌فرض: مدیر سالن)
+ *   ADMIN_EMAIL    – ایمیل ادمین (اختیاری)
+ */
 async function seedAdmin(app: import('@nestjs/common').INestApplicationContext) {
-  const email = process.env.ADMIN_EMAIL;
+  const phone    = process.env.ADMIN_PHONE;
   const password = process.env.ADMIN_PASSWORD;
-  if (!email || !password) return;
+  const fullName = process.env.ADMIN_NAME  || 'مدیر سالن';
+  const email    = process.env.ADMIN_EMAIL || undefined;
+
+  if (!phone || !password) {
+    console.log('⚠️  ADMIN_PHONE یا ADMIN_PASSWORD تنظیم نشده - seed ادمین رد شد');
+    return;
+  }
 
   const userRepo = app.get<Repository<User>>(getRepositoryToken(User));
-  const existing = await userRepo.findOne({ where: { email } });
-  if (existing) return;
+
+  // جستجو بر اساس شماره موبایل (اولویت) یا ایمیل
+  let existing = await userRepo.findOne({ where: { phone } });
+  if (!existing && email) {
+    existing = await userRepo.findOne({ where: { email } });
+  }
 
   const hash = await bcrypt.hash(password, 10);
-  const admin = userRepo.create({
-    email,
-    phone: process.env.ADMIN_PHONE || '09000000000',
-    fullName: 'مدیر سالن',
-    password: hash,
-    role: UserRole.ADMIN,
-    isActive: true,
-    isVerified: true,
-  });
-  await userRepo.save(admin);
-  console.log(`✅ Admin user seeded: ${email}`);
+
+  if (existing) {
+    // بروزرسانی کاربر موجود: نقش، نام، رمز و فعال‌سازی
+    await userRepo.update(existing.id, {
+      role: UserRole.ADMIN,
+      fullName,
+      password: hash,
+      phone,
+      ...(email ? { email } : {}),
+      isActive: true,
+      isVerified: true,
+    });
+    console.log(`✅ ادمین بروزرسانی شد: ${fullName} (${phone})`);
+  } else {
+    // ایجاد کاربر ادمین جدید
+    const admin = userRepo.create({
+      phone,
+      email,
+      fullName,
+      password: hash,
+      role: UserRole.ADMIN,
+      isActive: true,
+      isVerified: true,
+    });
+    await userRepo.save(admin);
+    console.log(`✅ ادمین ایجاد شد: ${fullName} (${phone})`);
+  }
 }
 
 async function bootstrap() {
@@ -40,11 +74,12 @@ async function bootstrap() {
   const uploadDir = join(process.cwd(), 'uploads');
   if (!existsSync(uploadDir)) {
     mkdirSync(uploadDir, { recursive: true });
-    console.log('📁 uploads directory created');
+    console.log('📁 پوشه uploads ایجاد شد');
   }
 
   const app = await NestFactory.create(AppModule);
 
+  // Seed ادمین قبل از هر چیز دیگری
   await seedAdmin(app);
 
   // Security
@@ -53,8 +88,21 @@ async function bootstrap() {
   }));
   app.use(compression());
 
-  // سرو فایل‌های استاتیک (تصاویر آپلودشده)
+  // سرو فایل‌های استاتیک آپلودشده
   app.use('/uploads', express.static(uploadDir));
+
+  // ───── پنل ادمین (فایل‌های build شده Vite) ─────
+  const adminDistPath = join(process.cwd(), 'admin-dist');
+  if (existsSync(adminDistPath)) {
+    // فایل‌های asset (js، css، تصاویر)
+    app.use('/admin', express.static(adminDistPath));
+    // SPA fallback: همه route های داخل /admin → index.html
+    app.use('/admin', (_req: express.Request, res: express.Response) => {
+      res.sendFile(join(adminDistPath, 'index.html'));
+    });
+    console.log('🖥️  پنل ادمین در دسترس است: /admin');
+  }
+  // ────────────────────────────────────────────────
 
   // CORS
   app.enableCors({
@@ -73,10 +121,10 @@ async function bootstrap() {
     }),
   );
 
-  // Global prefix
+  // پیشوند عمومی برای API
   app.setGlobalPrefix('api/v1');
 
-  // Swagger docs
+  // Swagger
   const config = new DocumentBuilder()
     .setTitle('سالن زیبایی پروانه اکبرپور')
     .setDescription('API سیستم مدیریت سالن زیبایی پروانه اکبرپور')
@@ -88,8 +136,9 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`🚀 Server running on port ${port}`);
+  console.log(`🚀 سرور روی پورت ${port} اجرا شد`);
   console.log(`📖 Swagger: http://localhost:${port}/api/docs`);
+  console.log(`🖥️  پنل ادمین: http://localhost:${port}/admin`);
 }
 
 bootstrap();
