@@ -4,6 +4,6 @@
   "runtime": "node",
   "region": "oregon",
   "plan": "free",
-  "buildCommand": "npm install --include=dev && cd ../admin && npm install --legacy-peer-deps && VITE_API_URL=https://parvane-backend.onrender.com/api/v1 npm run build && mkdir -p ../backend/admin-dist && cp -r dist/. ../backend/admin-dist/ && cd ../backend && npm run build",
+  "buildCommand": "npm install && npm run build",
   "startCommand": "node dist/main.js"
 }
