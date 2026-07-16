@@ -1,0 +1,378 @@
+بله، این بهترین روش است و من هم دقیقاً همین را پیشنهاد می‌کنم.
+
+با توجه به حجم پروژه، من این مستند را در حد یک Software Requirements Specification (SRS) + Master Prompt + Product Requirements Document (PRD) می‌نویسم؛ یعنی همان سندی که شرکت‌های نرم‌افزاری قبل از شروع پروژه تهیه می‌کنند.
+
+این مستند مخصوص پروژه شما خواهد بود و به‌گونه‌ای نوشته می‌شود که اگر آن را به یک Agent مانند Claude Code، Codex، Cursor، Roo Code، Cline یا هر Agent دیگری بدهید، بتواند پروژه را مرحله‌به‌مرحله بسازد.
+
+
+---
+
+ساختار مستند
+
+حدود ۱۵ بخش خواهد داشت و هر بخش بین ۸ تا ۲۰ صفحه خواهد بود.
+
+بخش اول
+
+معرفی پروژه و قوانین اصلی
+
+مشخصات پروژه
+
+مشخصات مالک
+
+مشخصات توسعه‌دهنده
+
+قوانین مالکیت
+
+قوانین مربوط به Agent
+
+برند پروژه
+
+هدف پروژه
+
+چشم‌انداز
+
+محدوده پروژه
+
+الزامات اصلی
+
+
+
+---
+
+بخش دوم
+
+تحلیل کامل کسب‌وکار سالن زیبایی
+
+شامل
+
+فرآیندهای سالن
+
+نقش کاربران
+
+Use Case
+
+User Story
+
+سناریوهای واقعی
+
+
+
+---
+
+بخش سوم
+
+طراحی UI/UX
+
+کاملاً دخترانه
+
+لوکس
+
+مدرن
+
+Material 3
+
+Jetpack Compose
+
+Design System
+
+Typography
+
+Color Palette
+
+Animation
+
+Icon
+
+Dark Mode
+
+Light Mode
+
+
+---
+
+بخش چهارم
+
+معماری نرم‌افزار
+
+Clean Architecture
+
+MVVM
+
+Repository Pattern
+
+Dependency Injection
+
+Hilt
+
+Coroutines
+
+Flow
+
+Navigation
+
+
+---
+
+بخش پنجم
+
+طراحی کامل دیتابیس PostgreSQL
+
+تمام جدول‌ها
+
+تمام روابط
+
+ER Diagram
+
+Normalization
+
+Index
+
+Trigger
+
+Constraint
+
+Backup
+
+
+---
+
+بخش ششم
+
+الگوریتم هوشمند رزرو
+
+Scheduling Engine
+
+Rule Engine
+
+Buffer
+
+Reservation Lock
+
+Parallel Service
+
+Workflow
+
+Busy Mode
+
+Cancellation
+
+Penalty
+
+
+---
+
+بخش هفتم
+
+Backend
+
+NestJS
+
+تمام API
+
+JWT
+
+Redis
+
+File Upload
+
+Validation
+
+Pagination
+
+Search
+
+Filter
+
+Audit
+
+Logging
+
+
+---
+
+بخش هشتم
+
+پنل مدیریت
+
+تمام صفحات
+
+تمام فرم‌ها
+
+تمام مجوزها
+
+Dashboard
+
+Chart
+
+Export
+
+Import
+
+History
+
+
+---
+
+بخش نهم
+
+اپلیکیشن اندروید Kotlin
+
+تمام صفحات
+
+تمام کلاس‌ها
+
+تمام ViewModelها
+
+تمام Repositoryها
+
+Room
+
+Retrofit
+
+Paging
+
+Notification
+
+Offline Cache
+
+
+---
+
+بخش دهم
+
+GitHub Agent
+
+ساخت Repository
+
+Commit
+
+Push
+
+Branch
+
+Release
+
+GitHub Actions
+
+Build APK
+
+Build AAB
+
+Artifacts
+
+CI/CD
+
+
+---
+
+بخش یازدهم
+
+امنیت
+
+Encryption
+
+OWASP
+
+JWT
+
+HTTPS
+
+Backup
+
+Restore
+
+Audit
+
+RBAC
+
+
+---
+
+بخش دوازدهم
+
+تست
+
+Unit Test
+
+Integration
+
+UI Test
+
+Performance Test
+
+
+---
+
+بخش سیزدهم
+
+استقرار
+
+Docker
+
+Docker Compose
+
+Server
+
+Domain
+
+SSL
+
+Monitoring
+
+Logging
+
+
+---
+
+بخش چهاردهم
+
+Roadmap
+
+MVP
+
+نسخه دوم
+
+نسخه سوم
+
+
+---
+
+بخش پانزدهم
+
+Master Prompt نهایی
+
+که تمام موارد بالا را در قالب یک پرامپ واحد برای Agent جمع‌بندی می‌کند.
+
+
+---
+
+هدف نهایی
+
+در پایان، شما یک مستند در اختیار خواهید داشت که ویژگی‌های زیر را دارد:
+
+در حد مستندات شرکت‌های نرم‌افزاری
+
+قابل استفاده برای Agentهای برنامه‌نویس
+
+بدون ابهام
+
+بدون نیاز به تصمیم‌گیری مجدد
+
+با تمام جزئیات فنی
+
+با معماری Enterprise
+
+مخصوص سالن زیبایی پروانه اکبرپور
+
+فقط برای Android با Kotlin و Jetpack Compose
+
+با طراحی کاملاً زنانه، لوکس، مدرن و حرفه‌ای
+
+با پنل مدیریت کامل که پروانه اکبرپور بتواند هر بخش از سیستم را (از قیمت‌ها و خدمات تا پرسنل، قوانین و تنظیمات) بدون نیاز به برنامه‌نویسی مدیریت کند.
+
+با هویت مالکیت روشن: برند و محصول متعلق به پروانه اکبرپور است و اطلاعات علی بهمنی به‌عنوان توسعه‌دهنده فقط در مستندات و بخش پشتیبانی فنی درج می‌شود، نه در رابط کاربری مشتری.
+
+با امکان استفاده از Agent برای تولید کد، مدیریت مخزن GitHub (در صورت داشتن مجوزهای لازم)، اجرای CI/CD و ساخت فایل‌های قابل نصب اندروید.
+
+
+به نظر من این مستند، ارزشمندترین دارایی پروژه شما خواهد بود و می‌تواند مبنای توسعه، نگهداری و گسترش آن در سال‌های آینده قرار گیرد.
