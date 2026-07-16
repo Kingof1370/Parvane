@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { font-family: 'Vazirmatn', sans-serif; }
+
+body {
+  background-color: #fdf6f9;
+  direction: rtl;
+}
+
+:root {
+  --primary: #C2185B;
+  --primary-light: #F48FB1;
+  --primary-dark: #880E4F;
+  --secondary: #E91E8C;
+  --gold: #B8860B;
+  --surface: #ffffff;
+  --background: #fdf6f9;
+}
+
+.gradient-header {
+  background: linear-gradient(135deg, #C2185B 0%, #E91E8C 50%, #FF4081 100%);
+}
+
+.card-hover { transition: all 0.2s; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(194,24,91,0.15); }
+
+.status-pending { background: #FFF3E0; color: #E65100; }
+.status-confirmed { background: #E3F2FD; color: #1565C0; }
+.status-completed { background: #E8F5E9; color: #2E7D32; }
+.status-cancelled { background: #FFEBEE; color: #C62828; }
