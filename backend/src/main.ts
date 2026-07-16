@@ -97,7 +97,7 @@ async function bootstrap() {
     // فایل‌های asset (js، css، تصاویر)
     app.use('/admin', express.static(adminDistPath));
     // SPA fallback: همه route های داخل /admin → index.html
-    app.use('/admin', (_req: express.Request, res: express.Response) => {
+    app.use('/admin', (_req: any, res: any) => {
       res.sendFile(join(adminDistPath, 'index.html'));
     });
     console.log('🖥️  پنل ادمین در دسترس است: /admin');
