@@ -1,33 +1,20 @@
-#!/usr/bin/env bash
-set -e
+#!/bin/sh
 
 echo "=== Building NestJS backend ==="
-nest build
+./node_modules/.bin/nest build
+if [ $? -ne 0 ]; then
+  echo "ERROR: nest build failed"
+  exit 1
+fi
 
 echo ""
-echo "=== Building Admin Panel ==="
-(
-  set +e   # در این بلاک، خطا باعث توقف نمی‌شود
-  cd ../admin || { echo "⚠️  admin dir not found, skipping"; exit 0; }
-  
-  echo "Installing admin dependencies..."
-  npm install --legacy-peer-deps
-  if [ $? -ne 0 ]; then
-    echo "⚠️  Admin npm install failed, skipping admin build"
-    exit 0
-  fi
-  
-  echo "Building admin panel with vite..."
-  npm run build
-  if [ $? -ne 0 ]; then
-    echo "⚠️  Admin vite build failed, skipping"
-    exit 0
-  fi
-  
-  echo "Copying admin dist to backend/admin-dist..."
-  mkdir -p ../backend/admin-dist
-  cp -r dist/. ../backend/admin-dist/
-  echo "✅ Admin panel built successfully!"
-)
-# خطای subshell را نادیده می‌گیریم
-true
+echo "=== Building Admin Panel (non-fatal) ==="
+cd ../admin && \
+  npm install --legacy-peer-deps && \
+  npm run build && \
+  mkdir -p ../backend/admin-dist && \
+  cp -r dist/. ../backend/admin-dist/ && \
+  echo "Admin panel built OK" || \
+  echo "Admin build failed - skipping (non-fatal)"
+
+exit 0
