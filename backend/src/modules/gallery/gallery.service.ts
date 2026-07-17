@@ -91,30 +91,32 @@ export class GalleryService {
   async getComments(galleryId: string) {
     const gallery = await this.repo.findOne({ where: { id: galleryId } });
     if (!gallery) throw new NotFoundException('آیتم گالری یافت نشد');
-    return this.commentRepo.find({
-      where: { galleryId, isVisible: true },
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-    });
+    return this.commentRepo
+      .createQueryBuilder('c')
+      .leftJoinAndSelect('c.user', 'user')
+      .where('c.gallery_id = :galleryId', { galleryId })
+      .andWhere('c.isVisible = true')
+      .orderBy('c.createdAt', 'DESC')
+      .getMany();
   }
 
   async getAllComments(galleryId: string) {
-    // برای ادمین - همه کامنت‌ها شامل مخفی‌ها
-    return this.commentRepo.find({
-      where: { galleryId },
-      relations: ['user'],
-      order: { createdAt: 'DESC' },
-    });
+    return this.commentRepo
+      .createQueryBuilder('c')
+      .leftJoinAndSelect('c.user', 'user')
+      .where('c.gallery_id = :galleryId', { galleryId })
+      .orderBy('c.createdAt', 'DESC')
+      .getMany();
   }
 
   async addComment(galleryId: string, content: string, userId?: string, guestName?: string) {
     const gallery = await this.repo.findOne({ where: { id: galleryId } });
     if (!gallery) throw new NotFoundException('آیتم گالری یافت نشد');
     const comment = this.commentRepo.create({
-      galleryId,
+      gallery: { id: galleryId } as any,
       content,
-      userId: userId || null,
       guestName: guestName || null,
+      ...(userId ? { user: { id: userId } as any } : {}),
     });
     return this.commentRepo.save(comment);
   }

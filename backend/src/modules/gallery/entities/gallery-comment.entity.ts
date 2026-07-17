@@ -1,6 +1,6 @@
 import {
   Entity, PrimaryGeneratedColumn, Column, CreateDateColumn,
-  ManyToOne, JoinColumn,
+  ManyToOne, JoinColumn, RelationId,
 } from 'typeorm';
 import { StyleGallery } from './style-gallery.entity';
 import { User } from '../../auth/entities/user.entity';
@@ -10,22 +10,22 @@ export class GalleryComment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => StyleGallery, { onDelete: 'CASCADE' })
-  @JoinColumn()
+  @ManyToOne(() => StyleGallery, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'gallery_id' })
   gallery: StyleGallery;
 
-  @Column()
+  @RelationId((c: GalleryComment) => c.gallery)
   galleryId: string;
 
-  @ManyToOne(() => User, { nullable: true, eager: true })
-  @JoinColumn()
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @Column({ nullable: true })
+  @RelationId((c: GalleryComment) => c.user)
   userId: string;
 
   // نام نمایشی (برای مهمان‌ها)
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 100 })
   guestName: string;
 
   @Column({ type: 'text' })
